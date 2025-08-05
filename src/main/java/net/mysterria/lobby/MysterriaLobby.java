@@ -14,7 +14,6 @@ import net.mysterria.lobby.domain.player.PlayerVisibilityManager;
 import net.mysterria.lobby.domain.protection.WorldProtectionManager;
 import net.mysterria.lobby.domain.zones.TeleportManager;
 import net.mysterria.lobby.domain.spawn.SpawnManager;
-import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MysterriaLobby extends JavaPlugin {
@@ -30,8 +29,6 @@ public final class MysterriaLobby extends JavaPlugin {
     private SpawnManager spawnManager;
     private RulesCommand rulesCommand;
     private LiteCommands<org.bukkit.command.CommandSender> liteCommands;
-
-    public static final NamespacedKey LANG_KEY = new NamespacedKey("mysterria", "lang");
 
     @Override
     public void onEnable() {

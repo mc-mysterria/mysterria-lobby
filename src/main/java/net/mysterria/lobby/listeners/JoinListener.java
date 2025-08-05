@@ -47,6 +47,7 @@ public class JoinListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.getPlayerVisibilityManager().onPlayerQuit(event.getPlayer());
         plugin.getTeleportManager().onPlayerQuit(event.getPlayer());
+        plugin.getLangManager().onPlayerQuit(event.getPlayer());
     }
 
     private void spawnFirework(Location location) {

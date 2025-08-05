@@ -45,7 +45,7 @@ public class LobbyCommands {
     }
     
     @Execute(name = "setlang")
-    @Description("Change your language preference")
+    @Description("Change your language preference or use 'auto' to use client locale")
     public void setLanguage(@Context Player player, @Arg(value = "language") String language) {
         if (!plugin.getConfigManager().isManualLanguageSelectionAllowed()) {
             player.sendMessage(miniMessage.deserialize(
@@ -56,17 +56,52 @@ public class LobbyCommands {
         
         if (language.isEmpty()) {
             String currentLang = plugin.getLangManager().getPlayerLang(player);
+            String clientLang = plugin.getLangManager().getClientLang(player);
+            boolean usingClientLocale = plugin.getLangManager().isUsingClientLocale(player);
+            
             player.sendMessage(miniMessage.deserialize(
                 "<gradient:#ffd700:#ffaa00>🌍 Your current language: <white>" + currentLang + "</white></gradient>"
+            ));
+            player.sendMessage(miniMessage.deserialize(
+                "<gray>Client locale: <white>" + clientLang + "</white> " + 
+                (usingClientLocale ? "<green>(auto-detected)</green>" : "<yellow>(overridden)</yellow>") + "</gray>"
             ));
             player.sendMessage(miniMessage.deserialize(
                 "<gray>Available languages: <yellow>" + 
                 String.join(", ", plugin.getLangManager().getAvailableLanguages()) + "</yellow></gray>"
             ));
+            player.sendMessage(miniMessage.deserialize(
+                "<gray>Use <yellow>/lobby setlang auto</yellow> to revert to client locale</gray>"
+            ));
             return;
         }
         
         String newLang = language.toLowerCase();
+        
+        if ("auto".equals(newLang)) {
+            plugin.getLangManager().clearPlayerLangOverride(player);
+            String clientLang = plugin.getLangManager().getClientLang(player);
+            String actualLang = plugin.getLangManager().getPlayerLang(player);
+            
+            player.sendMessage(miniMessage.deserialize(
+                "<gradient:#4CAF50:#45a049>✅ Language reverted to client locale: <white>" + actualLang + "</white></gradient>"
+            ));
+            if (!clientLang.equals(actualLang)) {
+                player.sendMessage(miniMessage.deserialize(
+                    "<gray>Note: Your client language '<yellow>" + clientLang + "</yellow>' is not supported, using default.</gray>"
+                ));
+            }
+            player.sendMessage(miniMessage.deserialize(
+                "<gray>Language will auto-detect from client on next join.</gray>"
+            ));
+            
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                player.getInventory().clear();
+                plugin.getJoinItemManager().giveJoinItems(player);
+                plugin.getPlayerVisibilityManager().updateVisibilityItem(player);
+            }, 1L);
+            return;
+        }
         
         if (!plugin.getLangManager().isLanguageAvailable(newLang)) {
             player.sendMessage(miniMessage.deserialize(
@@ -81,12 +116,13 @@ public class LobbyCommands {
         
         plugin.getLangManager().setPlayerLang(player, newLang);
         player.sendMessage(miniMessage.deserialize(
-            "<gradient:#4CAF50:#45a049>✅ Language changed to: <white>" + newLang + "</white></gradient>"
+            "<gradient:#4CAF50:#45a049>✅ Language temporarily set to: <white>" + newLang + "</white></gradient>"
+        ));
+        player.sendMessage(miniMessage.deserialize(
+            "<gray>This override will reset when you rejoin the server.</gray>"
         ));
         
-        // Refresh player's inventory and visibility item
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            // Clear and re-give join items
             player.getInventory().clear();
             plugin.getJoinItemManager().giveJoinItems(player);
             plugin.getPlayerVisibilityManager().updateVisibilityItem(player);

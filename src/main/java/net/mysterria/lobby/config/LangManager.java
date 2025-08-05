@@ -6,10 +6,11 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class LangManager {
@@ -18,6 +19,7 @@ public class LangManager {
     private final MiniMessage miniMessage;
     private String defaultLang;
     private final Map<String, Boolean> availableLanguages = new ConcurrentHashMap<>();
+    private final Map<UUID, String> temporaryLanguageOverrides = new ConcurrentHashMap<>();
 
     public LangManager(MysterriaLobby plugin) {
         this.plugin = plugin;
@@ -59,14 +61,58 @@ public class LangManager {
     }
 
     public String getPlayerLang(Player player) {
-        String lang = player.getPersistentDataContainer().get(MysterriaLobby.LANG_KEY, PersistentDataType.STRING);
-        return lang != null && availableLanguages.containsKey(lang) ? lang : defaultLang;
+        String tempLang = temporaryLanguageOverrides.get(player.getUniqueId());
+        if (tempLang != null && availableLanguages.containsKey(tempLang)) {
+            return tempLang;
+        }
+        
+        Locale clientLocale = player.locale();
+        String detectedLanguage = mapClientLocaleToLanguage(clientLocale);
+        
+        return detectedLanguage;
     }
 
     public void setPlayerLang(Player player, String lang) {
         if (availableLanguages.containsKey(lang)) {
-            player.getPersistentDataContainer().set(MysterriaLobby.LANG_KEY, PersistentDataType.STRING, lang);
+            temporaryLanguageOverrides.put(player.getUniqueId(), lang);
         }
+    }
+
+    public void clearPlayerLangOverride(Player player) {
+        temporaryLanguageOverrides.remove(player.getUniqueId());
+    }
+
+    public String getClientLang(Player player) {
+        Locale clientLocale = player.locale();
+        return mapClientLocaleToLanguage(clientLocale);
+    }
+
+    private String mapClientLocaleToLanguage(Locale clientLocale) {
+        String language = clientLocale.getLanguage().toLowerCase();
+        String country = clientLocale.getCountry().toLowerCase();
+        String fullLocale = language + "_" + country;
+
+        if (language.startsWith("uk") || language.startsWith("ua") || fullLocale.startsWith("uk")) {
+            return availableLanguages.containsKey("ua") ? "ua" : defaultLang;
+        }
+        
+        if (language.startsWith("es") || fullLocale.startsWith("es")) {
+            return availableLanguages.containsKey("es") ? "es" : defaultLang;
+        }
+        
+        if (language.startsWith("en") || fullLocale.startsWith("en")) {
+            return availableLanguages.containsKey("en") ? "en" : defaultLang;
+        }
+        
+        return defaultLang;
+    }
+
+    public boolean isUsingClientLocale(Player player) {
+        return !temporaryLanguageOverrides.containsKey(player.getUniqueId());
+    }
+
+    public void onPlayerQuit(Player player) {
+        temporaryLanguageOverrides.remove(player.getUniqueId());
     }
 
     public Component getLocalizedComponent(Player player, String path) {

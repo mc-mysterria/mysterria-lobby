@@ -6,9 +6,14 @@ general:
   heal_on_join: true
   teleport_to_spawn: true
 
+# Language system - now automatically detects client locale
 language:
+  # Default fallback when client language is not supported
   default: "en"
+  # Allow players to manually override their language with /lobby setlang
   allow_manual_selection: true
+  # Note: System automatically uses Player.getLocale() from client
+  # Supported languages: en, ua (Ukrainian), es (Spanish)
 
 # Player visibility toggle system
 player_hider:
