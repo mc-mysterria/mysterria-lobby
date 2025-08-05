@@ -25,7 +25,6 @@ public class SkullUtil {
             return new ItemStack(Material.PLAYER_HEAD);
         }
         
-        // If it's just an ID, prepend the full URL
         String textureUrl = textureUrlOrId.startsWith("http") ? textureUrlOrId : TEXTURE_URL_PREFIX + textureUrlOrId;
         
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
@@ -36,21 +35,14 @@ public class SkullUtil {
         }
         
         try {
-            System.out.println("Creating custom head with URL: " + textureUrl);
-            
-            // Create the texture value JSON for Minecraft's format
             String textureValue = "{\"textures\":{\"SKIN\":{\"url\":\"" + textureUrl + "\"}}}";
             String encodedTexture = java.util.Base64.getEncoder().encodeToString(textureValue.getBytes());
-            
-            // Create a PlayerProfile using Paper's API
             PlayerProfile playerProfile = Bukkit.createProfile(UUID.randomUUID());
             playerProfile.setProperty(new ProfileProperty("textures", encodedTexture));
             meta.setPlayerProfile(playerProfile);
             
             head.setItemMeta(meta);
-            System.out.println("Successfully created custom head");
         } catch (Exception e) {
-            System.err.println("Failed to create custom head texture: " + e.getMessage());
             e.printStackTrace();
         }
         
@@ -72,13 +64,11 @@ public class SkullUtil {
             return item;
         }
         
-        // Create a new head with the texture and copy other properties
         ItemStack customHead = createCustomHead(textureUrlOrId);
         if (item.hasItemMeta() && customHead.hasItemMeta()) {
             SkullMeta originalMeta = (SkullMeta) item.getItemMeta();
             SkullMeta customMeta = (SkullMeta) customHead.getItemMeta();
             
-            // Copy display name and lore
             if (originalMeta.hasDisplayName()) {
                 customMeta.setDisplayName(originalMeta.getDisplayName());
             }
@@ -86,7 +76,6 @@ public class SkullUtil {
                 customMeta.setLore(originalMeta.getLore());
             }
             
-            // Copy custom model data
             if (originalMeta.hasCustomModelData()) {
                 customMeta.setCustomModelData(originalMeta.getCustomModelData());
             }
@@ -94,7 +83,6 @@ public class SkullUtil {
             customHead.setItemMeta(customMeta);
         }
         
-        // Copy amount and other properties
         customHead.setAmount(item.getAmount());
         
         return customHead;

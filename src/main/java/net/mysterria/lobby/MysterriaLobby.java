@@ -13,6 +13,7 @@ import net.mysterria.lobby.gui.TriumphMenuManager;
 import net.mysterria.lobby.domain.player.PlayerVisibilityManager;
 import net.mysterria.lobby.domain.protection.WorldProtectionManager;
 import net.mysterria.lobby.domain.zones.TeleportManager;
+import net.mysterria.lobby.domain.spawn.SpawnManager;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -26,6 +27,7 @@ public final class MysterriaLobby extends JavaPlugin {
     private PlayerVisibilityManager playerVisibilityManager;
     private WorldProtectionManager worldProtectionManager;
     private JoinItemManager joinItemManager;
+    private SpawnManager spawnManager;
     private RulesCommand rulesCommand;
     private LiteCommands<org.bukkit.command.CommandSender> liteCommands;
 
@@ -44,6 +46,7 @@ public final class MysterriaLobby extends JavaPlugin {
         this.playerVisibilityManager = new PlayerVisibilityManager(this);
         this.worldProtectionManager = new WorldProtectionManager(this);
         this.joinItemManager = new JoinItemManager(this);
+        this.spawnManager = new SpawnManager(this);
         this.rulesCommand = new RulesCommand(this);
 
         setupCommands();
@@ -80,6 +83,7 @@ public final class MysterriaLobby extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new TeleportListener(this), this);
         getServer().getPluginManager().registerEvents(new WorldProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
+        getServer().getPluginManager().registerEvents(new VoidDamageListener(this), this);
     }
 
     public void reload() {
@@ -89,6 +93,7 @@ public final class MysterriaLobby extends JavaPlugin {
         teleportManager.reload();
         playerVisibilityManager.reload();
         worldProtectionManager.reload();
+        spawnManager.reload();
         rulesCommand.reload();
     }
 
@@ -122,6 +127,10 @@ public final class MysterriaLobby extends JavaPlugin {
 
     public JoinItemManager getJoinItemManager() {
         return joinItemManager;
+    }
+
+    public SpawnManager getSpawnManager() {
+        return spawnManager;
     }
 
     public RulesCommand getRulesCommand() {

@@ -31,8 +31,7 @@ public class JoinListener implements Listener {
         }
 
         if (plugin.getConfigManager().isTeleportToSpawn()) {
-            Location spawn = player.getWorld().getSpawnLocation();
-            player.teleport(spawn);
+            plugin.getSpawnManager().teleportToSpawn(player);
         }
 
         player.getInventory().clear();

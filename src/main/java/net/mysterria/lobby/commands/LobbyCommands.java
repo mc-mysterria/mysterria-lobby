@@ -99,6 +99,16 @@ public class LobbyCommands {
         plugin.getPlayerVisibilityManager().togglePlayerVisibility(player);
     }
     
+    @Execute(name = "spawn")
+    @Permission("mysterria.lobby.spawn")
+    @Description("Set the spawn location for the lobby")
+    public void setSpawn(@Context Player player) {
+        plugin.getSpawnManager().setSpawnLocation(player.getLocation());
+        player.sendMessage(miniMessage.deserialize(
+            "<gradient:#4CAF50:#45a049>✅ Spawn location set at your current position!</gradient>"
+        ));
+    }
+    
     @Execute(name = "info")
     @Description("Display lobby information")
     public void info(@Context CommandSender sender) {
