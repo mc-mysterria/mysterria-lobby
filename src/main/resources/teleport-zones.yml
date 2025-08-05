@@ -1,0 +1,58 @@
+# Teleport Zones Configuration
+# Define regions that teleport players to other servers in your Velocity network
+
+zones:
+  # Example survival server teleporter
+  survival_portal:
+    server: "survival"
+    world: "world"
+    region:
+      min:
+        x: 10.0
+        y: 64.0
+        z: 10.0
+      max:
+        x: 15.0
+        y: 69.0
+        z: 15.0
+    delay: 5
+    permission: ""
+
+  # Example creative server teleporter
+  creative_portal:
+    server: "creative"
+    world: "world"
+    region:
+      min:
+        x: -15.0
+        y: 64.0
+        z: 10.0
+      max:
+        x: -10.0
+        y: 69.0
+        z: 15.0
+    delay: 3
+    permission: "mysterria.creative"
+
+  # Example minigames teleporter
+  minigames_portal:
+    server: "minigames"
+    world: "world"
+    region:
+      min:
+        x: 10.0
+        y: 64.0
+        z: -15.0
+      max:
+        x: 15.0
+        y: 69.0
+        z: -10.0
+    delay: 5
+    permission: ""
+
+# Configuration notes:
+# - server: The server name as configured in your Velocity proxy
+# - world: The world name where the teleport zone is located
+# - region: Cubic region defined by minimum and maximum coordinates
+# - delay: Countdown time in seconds before teleportation
+# - permission: Required permission to use the teleporter (leave empty for no permission)

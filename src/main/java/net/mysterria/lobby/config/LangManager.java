@@ -1,0 +1,125 @@
+package net.mysterria.lobby.config;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.mysterria.lobby.MysterriaLobby;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
+import org.bukkit.persistence.PersistentDataType;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class LangManager {
+
+    private final MysterriaLobby plugin;
+    private final MiniMessage miniMessage;
+    private String defaultLang;
+    private final Map<String, Boolean> availableLanguages = new ConcurrentHashMap<>();
+
+    public LangManager(MysterriaLobby plugin) {
+        this.plugin = plugin;
+        this.miniMessage = MiniMessage.miniMessage();
+        reload();
+    }
+
+    public void reload() {
+        this.defaultLang = plugin.getConfig().getString("language.default", "en");
+
+        availableLanguages.clear();
+        ConfigurationSection joinItems = plugin.getConfig().getConfigurationSection("join.items");
+        if (joinItems != null) {
+            for (String itemKey : joinItems.getKeys(false)) {
+                ConfigurationSection displayName = joinItems.getConfigurationSection(itemKey + ".display_name");
+                if (displayName != null) {
+                    for (String lang : displayName.getKeys(false)) {
+                        availableLanguages.put(lang, true);
+                    }
+                }
+            }
+        }
+
+        ConfigurationSection menus = plugin.getConfig().getConfigurationSection("menus");
+        if (menus != null) {
+            for (String menuKey : menus.getKeys(false)) {
+                ConfigurationSection title = menus.getConfigurationSection(menuKey + ".title");
+                if (title != null) {
+                    for (String lang : title.getKeys(false)) {
+                        availableLanguages.put(lang, true);
+                    }
+                }
+            }
+        }
+
+        if (!availableLanguages.containsKey(defaultLang)) {
+            availableLanguages.put(defaultLang, true);
+        }
+    }
+
+    public String getPlayerLang(Player player) {
+        String lang = player.getPersistentDataContainer().get(MysterriaLobby.LANG_KEY, PersistentDataType.STRING);
+        return lang != null && availableLanguages.containsKey(lang) ? lang : defaultLang;
+    }
+
+    public void setPlayerLang(Player player, String lang) {
+        if (availableLanguages.containsKey(lang)) {
+            player.getPersistentDataContainer().set(MysterriaLobby.LANG_KEY, PersistentDataType.STRING, lang);
+        }
+    }
+
+    public Component getLocalizedComponent(Player player, String path) {
+        String text = getLocalizedString(player, path);
+        return miniMessage.deserialize(text).decoration(TextDecoration.ITALIC, false);
+    }
+
+    public List<Component> getLocalizedComponentList(Player player, String path) {
+        List<String> strings = getLocalizedStringList(player, path);
+        return strings.stream()
+                .map(s -> miniMessage.deserialize(s).decoration(TextDecoration.ITALIC, false))
+                .toList();
+    }
+
+    public String getLocalizedString(Player player, String path) {
+        String lang = getPlayerLang(player);
+        String localizedPath = path + "." + lang;
+
+        String text = plugin.getConfig().getString(localizedPath);
+        if (text == null) {
+            text = plugin.getConfig().getString(path + "." + defaultLang);
+        }
+        if (text == null) {
+            text = "Missing translation: " + path;
+        }
+
+        return text;
+    }
+
+    public List<String> getLocalizedStringList(Player player, String path) {
+        String lang = getPlayerLang(player);
+        String localizedPath = path + "." + lang;
+
+        List<String> texts = plugin.getConfig().getStringList(localizedPath);
+        if (texts.isEmpty()) {
+            texts = plugin.getConfig().getStringList(path + "." + defaultLang);
+        }
+        if (texts.isEmpty()) {
+            texts = List.of("Missing translation: " + path);
+        }
+
+        return texts;
+    }
+
+    public String getDefaultLang() {
+        return defaultLang;
+    }
+
+    public boolean isLanguageAvailable(String lang) {
+        return availableLanguages.containsKey(lang);
+    }
+
+    public java.util.Set<String> getAvailableLanguages() {
+        return availableLanguages.keySet();
+    }
+}

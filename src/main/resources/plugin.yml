@@ -1,0 +1,39 @@
+name: MysterriaLobby
+version: '${version}'
+description: '${description}'
+main: net.mysterria.lobby.MysterriaLobby
+api-version: '1.21'
+author: Mysterria
+website: https://mysterria.net
+
+permissions:
+  mysterria.lobby.reload:
+    description: Allows reloading lobby configuration
+    default: op
+  mysterria.lobby.teleport:
+    description: Allows managing teleport zones
+    default: op
+  mysterria.lobby.bypass.*:
+    description: Bypasses all world protections
+    default: op
+  mysterria.lobby.bypass.damage:
+    description: Bypasses damage protection
+    default: op
+  mysterria.lobby.bypass.hunger:
+    description: Bypasses hunger protection
+    default: op
+  mysterria.lobby.bypass.itemdrop:
+    description: Bypasses item drop protection
+    default: op
+  mysterria.lobby.bypass.itempickup:
+    description: Bypasses item pickup protection
+    default: op
+  mysterria.lobby.bypass.blockbreak:
+    description: Bypasses block break protection
+    default: op
+  mysterria.lobby.bypass.blockplace:
+    description: Bypasses block place protection
+    default: op
+  mysterria.lobby.bypass.interaction:
+    description: Bypasses interaction protection
+    default: op

@@ -1,0 +1,549 @@
+# Complete MysterriaLobby Configuration Example
+# This shows all available features and options
+
+general:
+  firework_on_join: true
+  heal_on_join: true
+  teleport_to_spawn: true
+
+language:
+  default: "en"
+  allow_manual_selection: true
+
+# Player visibility toggle system
+player_hider:
+  enabled: true
+  slot: 8
+  toggle_item:
+    shown:
+      name:
+        en: "<gradient:#4CAF50:#45a049><bold>👥 Players Visible</bold></gradient>"
+        ua: "<gradient:#4CAF50:#45a049><bold>👥 Гравці видимі</bold></gradient>"
+        es: "<gradient:#4CAF50:#45a049><bold>👥 Jugadores Visibles</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Click to hide all players"
+          - ""
+          - "<gradient:#81c784:#66bb6a>✅ Players are currently visible</gradient>"
+        ua:
+          - "<gray>Натисніть, щоб приховати всіх гравців"
+          - ""
+          - "<gradient:#81c784:#66bb6a>✅ Гравці зараз видимі</gradient>"
+        es:
+          - "<gray>Haz clic para ocultar jugadores"
+          - ""
+          - "<gradient:#81c784:#66bb6a>✅ Los jugadores están visibles</gradient>"
+    hidden:
+      name:
+        en: "<gradient:#f44336:#d32f2f><bold>👻 Players Hidden</bold></gradient>"
+        ua: "<gradient:#f44336:#d32f2f><bold>👻 Гравці приховані</bold></gradient>"
+        es: "<gradient:#f44336:#d32f2f><bold>👻 Jugadores Ocultos</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Click to show all players"
+          - ""
+          - "<gradient:#ef5350:#e53935>❌ Players are currently hidden</gradient>"
+        ua:
+          - "<gray>Натисніть, щоб показати всіх гравців"
+          - ""
+          - "<gradient:#ef5350:#e53935>❌ Гравці зараз приховані</gradient>"
+        es:
+          - "<gray>Haz clic para mostrar jugadores"
+          - ""
+          - "<gradient:#ef5350:#e53935>❌ Los jugadores están ocultos</gradient>"
+
+# Join items system
+join:
+  items:
+    server_info:
+      slot: 0
+      material: ENCHANTED_BOOK
+      amount: 1
+      display_name:
+        en: "<gradient:#667eea:#764ba2><bold>📖 Server Guide</bold></gradient>"
+        ua: "<gradient:#667eea:#764ba2><bold>📖 Довідник сервера</bold></gradient>"
+        es: "<gradient:#667eea:#764ba2><bold>📖 Guía del Servidor</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Everything you need to know"
+          - "<gradient:#ffd700:#ffaa00>✨ Rules, commands, and more!</gradient>"
+          - ""
+          - "<yellow>➤ Right-click to open</yellow>"
+        ua:
+          - "<gray>Все, що вам потрібно знати"
+          - "<gradient:#ffd700:#ffaa00>✨ Правила, команди та інше!</gradient>"
+          - ""
+          - "<yellow>➤ ПКМ щоб відкрити</yellow>"
+        es:
+          - "<gray>Todo lo que necesitas saber"
+          - "<gradient:#ffd700:#ffaa00>✨ Reglas, comandos y más!</gradient>"
+          - ""
+          - "<yellow>➤ Clic derecho para abrir</yellow>"
+      actions:
+        - "[MENU] server_info"
+
+    server_selector:
+      slot: 4
+      material: NETHER_STAR
+      display_name:
+        en: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Server Selector</bold></gradient>"
+        ua: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Вибір серверів</bold></gradient>"
+        es: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Selector de Servidores</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Travel to different game modes"
+          - "<gradient:#4ecdc4:#45b7aa>🚀 Survival, Creative, Minigames!</gradient>"
+          - ""
+          - "<yellow>➤ Right-click to choose</yellow>"
+        ua:
+          - "<gray>Подорожуйте різними ігровими режимами"
+          - "<gradient:#4ecdc4:#45b7aa>🚀 Виживання, Творчість, Міні-ігри!</gradient>"
+          - ""
+          - "<yellow>➤ ПКМ щоб обрати</yellow>"
+        es:
+          - "<gray>Viaja a diferentes modos de juego"
+          - "<gradient:#4ecdc4:#45b7aa>🚀 Supervivencia, Creativo, Minijuegos!</gradient>"
+          - ""
+          - "<yellow>➤ Clic derecho para elegir</yellow>"
+      actions:
+        - "[SERVER_SELECTOR]"
+
+    language_selector:
+      slot: 7
+      material: PLAYER_HEAD
+      texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
+      display_name:
+        en: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Language / Мова / Idioma</bold></gradient>"
+        ua: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Language / Мова / Idioma</bold></gradient>"
+        es: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Language / Мова / Idioma</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Change your language preference"
+          - "<gradient:#ff8a80:#ff5722>🌟 English, Українська, Español</gradient>"
+          - ""
+          - "<yellow>➤ Right-click to select</yellow>"
+        ua:
+          - "<gray>Змініть налаштування мови"
+          - "<gradient:#ff8a80:#ff5722>🌟 English, Українська, Español</gradient>"
+          - ""
+          - "<yellow>➤ ПКМ щоб обрати</yellow>"
+        es:
+          - "<gray>Cambia tu preferencia de idioma"
+          - "<gradient:#ff8a80:#ff5722>🌟 English, Українська, Español</gradient>"
+          - ""
+          - "<yellow>➤ Clic derecho para seleccionar</yellow>"
+      actions:
+        - "[MENU] language_menu"
+
+    cosmetics:
+      slot: 6
+      material: DIAMOND
+      display_name:
+        en: "<gradient:#e91e63:#9c27b0><bold>💎 Cosmetics</bold></gradient>"
+        ua: "<gradient:#e91e63:#9c27b0><bold>💎 Косметика</bold></gradient>"
+        es: "<gradient:#e91e63:#9c27b0><bold>💎 Cosméticos</bold></gradient>"
+      lore:
+        en:
+          - "<gray>Customize your appearance"
+          - "<gradient:#f06292:#ba68c8>✨ Trails, pets, and more!</gradient>"
+          - ""
+          - "<red>⚠ Coming Soon!</red>"
+        ua:
+          - "<gray>Налаштуйте свій вигляд"
+          - "<gradient:#f06292:#ba68c8>✨ Сліди, вихованці та інше!</gradient>"
+          - ""
+          - "<red>⚠ Незабаром!</red>"
+        es:
+          - "<gray>Personaliza tu apariencia"
+          - "<gradient:#f06292:#ba68c8>✨ Rastros, mascotas y más!</gradient>"
+          - ""
+          - "<red>⚠ Próximamente!</red>"
+      actions:
+        - "[MESSAGE] messages.coming_soon"
+
+# Menu system configurations
+menus:
+  server_info:
+    title:
+      en: "<gradient:#667eea:#764ba2><bold>📖 Server Information</bold></gradient>"
+      ua: "<gradient:#667eea:#764ba2><bold>📖 Інформація про сервер</bold></gradient>"
+      es: "<gradient:#667eea:#764ba2><bold>📖 Información del Servidor</bold></gradient>"
+    rows: 3
+    items:
+      discord:
+        slot: 9
+        material: PAPER
+        display_name:
+          en: "<gradient:#7289da:#5865f2><bold>💬 Discord Server</bold></gradient>"
+          ua: "<gradient:#7289da:#5865f2><bold>💬 Discord Сервер</bold></gradient>"
+          es: "<gradient:#7289da:#5865f2><bold>💬 Servidor Discord</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Join our community Discord"
+            - "<#7289da>discord.gg/misterria</>"
+            - ""
+            - "<gradient:#00f260:#0575e6>🎮 Chat, events, and support!</gradient>"
+          ua:
+            - "<gray>Приєднуйтесь до нашого Discord"
+            - "<#7289da>discord.gg/misterria</>"
+            - ""
+            - "<gradient:#00f260:#0575e6>🎮 Чат, події та підтримка!</gradient>"
+          es:
+            - "<gray>Únete a nuestro Discord"
+            - "<#7289da>discord.gg/misterria</>"
+            - ""
+            - "<gradient:#00f260:#0575e6>🎮 Chat, eventos y soporte!</gradient>"
+        actions:
+          - "[MESSAGE] messages.discord_link"
+
+      website:
+        slot: 11
+        material: GLOBE_BANNER_PATTERN
+        display_name:
+          en: "<gradient:#ff9a9e:#fecfef><bold>🌐 Official Website</bold></gradient>"
+          ua: "<gradient:#ff9a9e:#fecfef><bold>🌐 Офіційний сайт</bold></gradient>"
+          es: "<gradient:#ff9a9e:#fecfef><bold>🌐 Sitio Web Oficial</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Visit our official website"
+            - "<#ff9a9e>mysterria.net</>"
+            - ""
+            - "<gradient:#a8edea:#fed6e3>📰 News, updates, and store!</gradient>"
+          ua:
+            - "<gray>Відвідайте наш офіційний сайт"
+            - "<#ff9a9e>mysterria.net</>"
+            - ""
+            - "<gradient:#a8edea:#fed6e3>📰 Новини, оновлення та магазин!</gradient>"
+          es:
+            - "<gray>Visita nuestro sitio web oficial"
+            - "<#ff9a9e>mysterria.net</>"
+            - ""
+            - "<gradient:#a8edea:#fed6e3>📰 Noticias, actualizaciones y tienda!</gradient>"
+        actions:
+          - "[MESSAGE] messages.website_link"
+
+      rules:
+        slot: 13
+        material: WRITTEN_BOOK
+        display_name:
+          en: "<gradient:#ffecd2:#fcb69f><bold>📋 Server Rules</bold></gradient>"
+          ua: "<gradient:#ffecd2:#fcb69f><bold>📋 Правила сервера</bold></gradient>"
+          es: "<gradient:#ffecd2:#fcb69f><bold>📋 Reglas del Servidor</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Read our community rules"
+            - ""
+            - "<gradient:#ff6b6b:#ee5a52>⚠️ Important to follow!</gradient>"
+            - "<yellow>➤ Click to view rules</yellow>"
+          ua:
+            - "<gray>Прочитайте правила спільноти"
+            - ""
+            - "<gradient:#ff6b6b:#ee5a52>⚠️ Важливо дотримуватися!</gradient>"
+            - "<yellow>➤ Натисніть, щоб переглянути</yellow>"
+          es:
+            - "<gray>Lee las reglas de la comunidad"
+            - ""
+            - "<gradient:#ff6b6b:#ee5a52>⚠️ Importante seguir!</gradient>"
+            - "<yellow>➤ Haz clic para ver reglas</yellow>"
+        actions:
+          - "[COMMAND] rules"
+          - "[CLOSE]"
+
+      vote:
+        slot: 15
+        material: EMERALD
+        display_name:
+          en: "<gradient:#4caf50:#2e7d32><bold>🗳️ Vote for Server</bold></gradient>"
+          ua: "<gradient:#4caf50:#2e7d32><bold>🗳️ Голосувати за сервер</bold></gradient>"
+          es: "<gradient:#4caf50:#2e7d32><bold>🗳️ Votar por el Servidor</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Support us by voting daily"
+            - ""
+            - "<gradient:#66bb6a:#4caf50>💰 Earn rewards for voting!</gradient>"
+            - "<yellow>➤ Click to get vote links</yellow>"
+          ua:
+            - "<gray>Підтримайте нас щоденним голосуванням"
+            - ""
+            - "<gradient:#66bb6a:#4caf50>💰 Отримуйте нагороди за голосування!</gradient>"
+            - "<yellow>➤ Натисніть для отримання посилань</yellow>"
+          es:
+            - "<gray>Apóyanos votando diariamente"
+            - ""
+            - "<gradient:#66bb6a:#4caf50>💰 Gana recompensas por votar!</gradient>"
+            - "<yellow>➤ Haz clic para obtener enlaces</yellow>"
+        actions:
+          - "[MESSAGE] messages.vote_links"
+
+      back:
+        slot: 22
+        material: ARROW
+        display_name:
+          en: "<gradient:#c471ed:#f64f59><bold>← Back to Lobby</bold></gradient>"
+          ua: "<gradient:#c471ed:#f64f59><bold>← Назад до лобі</bold></gradient>"
+          es: "<gradient:#c471ed:#f64f59><bold>← Volver al Lobby</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Close this menu"
+          ua:
+            - "<gray>Закрити це меню"
+          es:
+            - "<gray>Cerrar este menú"
+        actions:
+          - "[CLOSE]"
+
+  server_selector:
+    title:
+      en: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Server Selector</bold></gradient>"
+      ua: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Вибір серверів</bold></gradient>"
+      es: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Selector de Servidores</bold></gradient>"
+    rows: 3
+    items:
+      survival:
+        slot: 10
+        material: GRASS_BLOCK
+        display_name:
+          en: "<gradient:#4CAF50:#45a049><bold>🌲 Survival</bold></gradient>"
+          ua: "<gradient:#4CAF50:#45a049><bold>🌲 Виживання</bold></gradient>"
+          es: "<gradient:#4CAF50:#45a049><bold>🌲 Supervivencia</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Classic survival experience"
+            - ""
+            - "<gradient:#8bc34a:#689f38>🏠 Build, mine, explore!</gradient>"
+            - "<yellow>➤ Click to join</yellow>"
+          ua:
+            - "<gray>Класичний досвід виживання"
+            - ""
+            - "<gradient:#8bc34a:#689f38>🏠 Будуйте, копайте, досліджуйте!</gradient>"
+            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
+          es:
+            - "<gray>Experiencia de supervivencia clásica"
+            - ""
+            - "<gradient:#8bc34a:#689f38>🏠 ¡Construye, mina, explora!</gradient>"
+            - "<yellow>➤ Haz clic para unirte</yellow>"
+        actions:
+          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
+          - "[TELEPORT] survival"
+          - "[CLOSE]"
+
+      creative:
+        slot: 12
+        material: COMMAND_BLOCK
+        display_name:
+          en: "<gradient:#2196F3:#1976D2><bold>🎨 Creative</bold></gradient>"
+          ua: "<gradient:#2196F3:#1976D2><bold>🎨 Творчість</bold></gradient>"
+          es: "<gradient:#2196F3:#1976D2><bold>🎨 Creativo</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Unlimited building possibilities"
+            - ""
+            - "<gradient:#03A9F4:#0288D1>🚀 Create amazing builds!</gradient>"
+            - "<yellow>➤ Click to join</yellow>"
+          ua:
+            - "<gray>Необмежені можливості будівництва"
+            - ""
+            - "<gradient:#03A9F4:#0288D1>🚀 Створюйте дивовижні споруди!</gradient>"
+            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
+          es:
+            - "<gray>Posibilidades de construcción ilimitadas"
+            - ""
+            - "<gradient:#03A9F4:#0288D1>🚀 ¡Crea construcciones increíbles!</gradient>"
+            - "<yellow>➤ Haz clic para unirte</yellow>"
+        actions:
+          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
+          - "[TELEPORT] creative"
+          - "[CLOSE]"
+
+      minigames:
+        slot: 14
+        material: BOW
+        display_name:
+          en: "<gradient:#FF9800:#F57C00><bold>🎯 Minigames</bold></gradient>"
+          ua: "<gradient:#FF9800:#F57C00><bold>🎯 Міні-ігри</bold></gradient>"
+          es: "<gradient:#FF9800:#F57C00><bold>🎯 Minijuegos</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Fun games and competitions"
+            - ""
+            - "<gradient:#FF5722:#D84315>⚔️ Battle other players!</gradient>"
+            - "<yellow>➤ Click to join</yellow>"
+          ua:
+            - "<gray>Веселі ігри та змагання"
+            - ""
+            - "<gradient:#FF5722:#D84315>⚔️ Битвайся з іншими гравцями!</gradient>"
+            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
+          es:
+            - "<gray>Juegos divertidos y competiciones"
+            - ""
+            - "<gradient:#FF5722:#D84315>⚔️ ¡Batalla contra otros jugadores!</gradient>"
+            - "<yellow>➤ Haz clic para unirte</yellow>"
+        actions:
+          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
+          - "[TELEPORT] minigames"
+          - "[CLOSE]"
+
+      skyblock:
+        slot: 16
+        material: END_STONE
+        display_name:
+          en: "<gradient:#9C27B0:#673AB7><bold>🏝️ SkyBlock</bold></gradient>"
+          ua: "<gradient:#9C27B0:#673AB7><bold>🏝️ Небесний блок</bold></gradient>"
+          es: "<gradient:#9C27B0:#673AB7><bold>🏝️ SkyBlock</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Start from nothing, build everything"
+            - ""
+            - "<gradient:#E91E63:#9C27B0>🌟 Challenge yourself!</gradient>"
+            - "<yellow>➤ Click to join</yellow>"
+          ua:
+            - "<gray>Почніть з нічого, побудуйте все"
+            - ""
+            - "<gradient:#E91E63:#9C27B0>🌟 Кинути виклик собі!</gradient>"
+            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
+          es:
+            - "<gray>Comienza desde cero, construye todo"
+            - ""
+            - "<gradient:#E91E63:#9C27B0>🌟 ¡Desafíate a ti mismo!</gradient>"
+            - "<yellow>➤ Haz clic para unirte</yellow>"
+        actions:
+          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0" 
+          - "[TELEPORT] skyblock"
+          - "[CLOSE]"
+
+      close:
+        slot: 22
+        material: BARRIER
+        display_name:
+          en: "<gradient:#f44336:#d32f2f><bold>✖ Close</bold></gradient>"
+          ua: "<gradient:#f44336:#d32f2f><bold>✖ Закрити</bold></gradient>"
+          es: "<gradient:#f44336:#d32f2f><bold>✖ Cerrar</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Return to lobby"
+          ua:
+            - "<gray>Повернутися до лобі"
+          es:
+            - "<gray>Volver al lobby"
+        actions:
+          - "[SOUND] UI_BUTTON_CLICK 0.8 1.0"
+          - "[CLOSE]"
+
+  language_menu:
+    title:
+      en: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Select Your Language</bold></gradient>"
+      ua: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Оберіть вашу мову</bold></gradient>"
+      es: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Selecciona tu Idioma</bold></gradient>"
+    rows: 1
+    items:
+      english:
+        slot: 2 
+        material: PLAYER_HEAD
+        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
+        display_name:
+          en: "<gradient:#667eea:#764ba2><bold>🇺🇸 English</bold></gradient>"
+          ua: "<gradient:#667eea:#764ba2><bold>🇺🇸 Англійська</bold></gradient>"
+          es: "<gradient:#667eea:#764ba2><bold>🇺🇸 Inglés</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Switch to English"
+            - "<green>✓ Currently selected</green>"
+          ua:
+            - "<gray>Перемкнути на англійську"
+            - "<yellow>Натисніть для вибору</yellow>"
+          es:
+            - "<gray>Cambiar a inglés"
+            - "<yellow>Haz clic para seleccionar</yellow>"
+        actions:
+          - "[COMMAND] lobby setlang en"
+          - "[CLOSE]"
+
+      ukrainian:
+        slot: 4
+        material: PLAYER_HEAD
+        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
+        display_name:
+          en: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Ukrainian</bold></gradient>"
+          ua: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Українська</bold></gradient>"
+          es: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Ucraniano</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Switch to Ukrainian"
+            - "<yellow>Click to select</yellow>"
+          ua:
+            - "<gray>Перемкнути на українську"
+            - "<green>✓ Обрано зараз</green>"
+          es:
+            - "<gray>Cambiar a ucraniano"
+            - "<yellow>Haz clic para seleccionar</yellow>"
+        actions:
+          - "[COMMAND] lobby setlang ua"
+          - "[CLOSE]"
+
+      spanish:
+        slot: 6
+        material: PLAYER_HEAD
+        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
+        display_name:
+          en: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Spanish</bold></gradient>"
+          ua: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Іспанська</bold></gradient>"
+          es: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Español</bold></gradient>"
+        lore:
+          en:
+            - "<gray>Switch to Spanish"
+            - "<yellow>Click to select</yellow>"
+          ua:
+            - "<gray>Перемкнути на іспанську"
+            - "<yellow>Натисніть для вибору</yellow>"
+          es:
+            - "<gray>Cambiar a español"
+            - "<green>✓ Actualmente seleccionado</green>"
+        actions:
+          - "[COMMAND] lobby setlang es"
+          - "[CLOSE]"
+
+# Message system
+messages:
+  discord_link:
+    en: "<click:open_url:https://discord.gg/misterria><gradient:#7289da:#5865f2>🎮 Join our Discord community: <u>discord.gg/misterria</u></gradient></click>"
+    ua: "<click:open_url:https://discord.gg/misterria><gradient:#7289da:#5865f2>🎮 Приєднуйтесь до нашої Discord спільноти: <u>discord.gg/misterria</u></gradient></click>"
+    es: "<click:open_url:https://discord.gg/misterria><gradient:#7289da:#5865f2>🎮 Únete a nuestra comunidad Discord: <u>discord.gg/misterria</u></gradient></click>"
+
+  website_link:
+    en: "<click:open_url:https://mysterria.net><gradient:#ff9a9e:#fecfef>🌐 Visit our website: <u>mysterria.net</u></gradient></click>"
+    ua: "<click:open_url:https://mysterria.net><gradient:#ff9a9e:#fecfef>🌐 Відвідайте наш сайт: <u>mysterria.net</u></gradient></click>"
+    es: "<click:open_url:https://mysterria.net><gradient:#ff9a9e:#fecfef>🌐 Visita nuestro sitio web: <u>mysterria.net</u></gradient></click>"
+
+  vote_links:
+    en: |
+      <gradient:#4caf50:#2e7d32><bold>🗳️ Vote for Mysterria Network!</bold></gradient>
+      
+      <yellow>Vote on these sites for rewards:</yellow>
+      <click:open_url:https://minecraftservers.org/vote/123456><green>• MinecraftServers.org</green></click>
+      <click:open_url:https://minecraft-mp.com/server/123456><green>• Minecraft-MP.com</green></click>
+      <click:open_url:https://topminecraftservers.org/vote/123456><green>• TopMinecraftServers.org</green></click>
+      
+      <gradient:#66bb6a:#4caf50>💰 Each vote gives you rewards!</gradient>
+    ua: |
+      <gradient:#4caf50:#2e7d32><bold>🗳️ Голосуйте за Mysterria Network!</bold></gradient>
+      
+      <yellow>Голосуйте на цих сайтах за нагороди:</yellow>
+      <click:open_url:https://minecraftservers.org/vote/123456><green>• MinecraftServers.org</green></click>
+      <click:open_url:https://minecraft-mp.com/server/123456><green>• Minecraft-MP.com</green></click>
+      <click:open_url:https://topminecraftservers.org/vote/123456><green>• TopMinecraftServers.org</green></click>
+      
+      <gradient:#66bb6a:#4caf50>💰 Кожен голос дає вам нагороди!</gradient>
+    es: |
+      <gradient:#4caf50:#2e7d32><bold>🗳️ ¡Vota por Mysterria Network!</bold></gradient>
+      
+      <yellow>Vota en estos sitios para obtener recompensas:</yellow>
+      <click:open_url:https://minecraftservers.org/vote/123456><green>• MinecraftServers.org</green></click>
+      <click:open_url:https://minecraft-mp.com/server/123456><green>• Minecraft-MP.com</green></click>
+      <click:open_url:https://topminecraftservers.org/vote/123456><green>• TopMinecraftServers.org</green></click>
+      
+      <gradient:#66bb6a:#4caf50>💰 ¡Cada voto te da recompensas!</gradient>
+
+  coming_soon:
+    en: "<gradient:#e91e63:#9c27b0>💎 Cosmetics system is coming soon! Stay tuned for amazing customization options!</gradient>"
+    ua: "<gradient:#e91e63:#9c27b0>💎 Система косметики незабаром! Очікуйте дивовижні можливості налаштування!</gradient>"
+    es: "<gradient:#e91e63:#9c27b0>💎 ¡El sistema de cosméticos llega pronto! ¡Mantente atento a increíbles opciones de personalización!</gradient>"

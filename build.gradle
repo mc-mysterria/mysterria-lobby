@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id("io.github.goooler.shadow") version "8.1.8"
+}
+
+group = 'net.mysterria'
+version = '1.0.0'
+description = 'MysterriaLobby'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.panda-lang.org/releases" }
+
+    maven {
+        url "https://repo.triumphteam.dev/snapshots/"
+    }
+
+    maven {
+        name = 'papermc-repo'
+        url = 'https://repo.papermc.io/repository/maven-public/'
+    }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT'
+    implementation 'net.kyori:adventure-text-minimessage:4.17.0'
+    implementation("dev.triumphteam:triumph-gui-paper:3.1.13-SNAPSHOT")
+    implementation("dev.rollczi:litecommands-bukkit:3.10.0")
+}
+
+processResources {
+    filteringCharset = 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand(project.properties)
+    }
+}
+
+shadowJar {
+    archiveClassifier = ''
+    relocate 'net.kyori.adventure.text.minimessage', 'net.mysterria.lobby.libs.minimessage'
+}
+
+build {
+    dependsOn shadowJar
+}
