@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 
 public class VoidDamageListener implements Listener {
 
@@ -29,5 +30,28 @@ public class VoidDamageListener implements Listener {
             player.setFoodLevel(20);
             player.setSaturation(20.0f);
         }
+
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+
+        event.setCancelled(true);
+        
+        event.getDrops().clear();
+        event.setDroppedExp(0);
+        
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            plugin.getSpawnManager().teleportToSpawn(player);
+            
+            player.setHealth(20.0);
+            player.setFoodLevel(20);
+            player.setSaturation(20.0f);
+            player.setExhaustion(0.0f);
+        }, 1L);
     }
 }

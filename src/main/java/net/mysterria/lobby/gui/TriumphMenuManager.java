@@ -87,7 +87,6 @@ public class TriumphMenuManager {
             gui.setItem(itemData.slot, guiItem);
         }
 
-        // Add decorative glass panes to empty slots
         addDecorations(gui, menuData);
 
         gui.open(player);
@@ -132,7 +131,6 @@ public class TriumphMenuManager {
                 .name(Component.empty())
                 .asGuiItem(event -> event.setCancelled(true));
 
-        // Fill empty slots with glass panes
         int totalSlots = menuData.rows * 9;
         for (int i = 0; i < totalSlots; i++) {
             if (gui.getGuiItem(i) == null) {

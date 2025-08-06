@@ -98,12 +98,10 @@ public class SkullUtil {
             return false;
         }
         
-        // Check if it's a full URL
         if (textureUrlOrId.startsWith(TEXTURE_URL_PREFIX)) {
             return textureUrlOrId.length() > TEXTURE_URL_PREFIX.length();
         }
         
-        // Check if it's just a texture ID (should be a long hex string)
         return textureUrlOrId.matches("[a-fA-F0-9]{64}") || textureUrlOrId.matches("[a-fA-F0-9]{32}");
     }
 }

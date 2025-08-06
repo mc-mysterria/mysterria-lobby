@@ -84,7 +84,6 @@ public class PlayerVisibilityManager {
         String message = getLocalizedMessage(player, messageKey);
         player.sendMessage(miniMessage.deserialize(message));
         
-        // Sound effect
         Sound sound = visible ? Sound.ENTITY_EXPERIENCE_ORB_PICKUP : Sound.BLOCK_GLASS_BREAK;
         player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
     }
@@ -134,7 +133,6 @@ public class PlayerVisibilityManager {
                     .build();
         }
         
-        // Add action data
         item.editMeta(meta -> {
             meta.getPersistentDataContainer().set(
                     new NamespacedKey(plugin, "actions"),
@@ -147,11 +145,9 @@ public class PlayerVisibilityManager {
     }
     
     public void onPlayerJoin(Player player) {
-        // Show/hide all players based on preference
         updatePlayerVisibility(player);
         updateVisibilityItem(player);
         
-        // Show this player to others based on their preferences
         for (Player other : plugin.getServer().getOnlinePlayers()) {
             if (other.equals(player)) continue;
             

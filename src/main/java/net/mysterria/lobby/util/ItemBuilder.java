@@ -85,7 +85,6 @@ public class ItemBuilder {
     public ItemBuilder skullTexture(String textureUrl) {
         if (item.getType() == Material.PLAYER_HEAD && textureUrl != null && !textureUrl.isEmpty()) {
             ItemStack customHead = SkullUtil.createCustomHead(textureUrl);
-            // Copy existing meta to the new head
             customHead.setItemMeta(meta);
             return new ItemBuilder(customHead);
         }

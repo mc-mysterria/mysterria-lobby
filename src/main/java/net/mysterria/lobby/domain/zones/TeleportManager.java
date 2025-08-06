@@ -10,6 +10,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -26,6 +28,8 @@ public class TeleportManager {
     private final Map<String, TeleportZone> zones = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitTask> teleportTasks = new ConcurrentHashMap<>();
     private final Map<UUID, String> playerZones = new ConcurrentHashMap<>();
+    private final Map<String, BukkitTask> seaEffectTasks = new ConcurrentHashMap<>();
+    private final Set<String> zonesWithSeaEffect = new HashSet<>();
 
     private File configFile;
     private FileConfiguration config;
@@ -44,7 +48,6 @@ public class TeleportManager {
             configFile.getParentFile().mkdirs();
             try {
                 configFile.createNewFile();
-                // Create default configuration
                 FileConfiguration defaultConfig = YamlConfiguration.loadConfiguration(configFile);
                 defaultConfig.set("zones.example_portal.server", "survival");
                 defaultConfig.set("zones.example_portal.world", "world");
@@ -104,6 +107,9 @@ public class TeleportManager {
 
                 zones.put(zoneId, teleportZone);
 
+                zonesWithSeaEffect.add(zoneId);
+                startSeaEffect(zoneId);
+
             } catch (Exception e) {
                 plugin.getLogger().severe("Failed to load teleport zone '" + zoneId + "': " + e.getMessage());
             }
@@ -132,6 +138,9 @@ public class TeleportManager {
 
         zones.put(id, zone);
 
+        zonesWithSeaEffect.add(id);
+        startSeaEffect(id);
+
         ConfigurationSection zoneSection = config.createSection("zones." + id);
         zoneSection.set("server", serverName);
         zoneSection.set("world", pos1.getWorld().getName());
@@ -159,6 +168,10 @@ public class TeleportManager {
     }
 
     public void checkPlayerZone(Player player) {
+        if (teleportTasks.containsKey(player.getUniqueId())) {
+            return;
+        }
+
         String currentZone = playerZones.get(player.getUniqueId());
         TeleportZone newZone = null;
 
@@ -174,46 +187,40 @@ public class TeleportManager {
             startTeleportCountdown(player, newZone);
         } else if (newZone == null && currentZone != null) {
             playerZones.remove(player.getUniqueId());
-            cancelTeleport(player);
         }
     }
 
     private void startTeleportCountdown(Player player, TeleportZone zone) {
         if (!zone.getPermission().isEmpty() && !player.hasPermission(zone.getPermission())) {
-            player.sendMessage(miniMessage.deserialize(
-                    "<red>⛔ You don't have permission to access this teleporter!"
-            ));
+            player.sendMessage(plugin.getLangManager().getLocalizedComponent(player, "teleport.no_permission"));
             return;
         }
 
         cancelTeleport(player);
 
-        player.sendMessage(miniMessage.deserialize(
-                "<gradient:#00d4ff:#0099cc>🌟 Teleporter detected! Teleporting to <white>" +
-                zone.getServerName() + "</white> in <yellow>" + zone.getDelay() + "</yellow> seconds...</gradient>"
-        ));
+        PotionEffect slowFall = new PotionEffect(PotionEffectType.SLOW_FALLING, (zone.getDelay() + 5) * 20, 0, false, false);
+        PotionEffect nausea = new PotionEffect(PotionEffectType.NAUSEA, (zone.getDelay() + 5) * 20, 0, false, false);
+        player.addPotionEffect(slowFall);
+        player.addPotionEffect(nausea);
+
+        player.sendMessage(plugin.getLangManager().getLocalizedComponent(player, "teleport.detected")
+                .replaceText(builder -> builder.match("%server%").replacement(zone.getServerName()))
+                .replaceText(builder -> builder.match("%delay%").replacement(String.valueOf(zone.getDelay()))));
 
         BukkitTask task = new BukkitRunnable() {
             int countdown = zone.getDelay();
 
             @Override
             public void run() {
-                if (!zone.contains(player.getLocation())) {
-                    player.sendMessage(miniMessage.deserialize(
-                            "<red>❌ Teleportation cancelled - you left the zone!"
-                    ));
-                    cancel();
-                    return;
-                }
 
                 if (countdown <= 0) {
                     teleportToServer(player, zone.getServerName());
+                    teleportTasks.remove(player.getUniqueId()); // Clean up task reference
                     cancel();
                     return;
                 }
 
-                // Visual effects
-                showCountdownEffects(player, countdown);
+                showCountdownEffects(player, countdown, zone.getServerName());
                 countdown--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
@@ -221,40 +228,35 @@ public class TeleportManager {
         teleportTasks.put(player.getUniqueId(), task);
     }
 
-    private void showCountdownEffects(Player player, int countdown) {
-        // Title
+    private void showCountdownEffects(Player player, int countdown, String serverName) {
         Title title = Title.title(
                 miniMessage.deserialize("<gradient:#ff6b6b:#ee5a52><bold>" + countdown + "</bold></gradient>"),
-                miniMessage.deserialize("<gray>Teleporting..."),
+                plugin.getLangManager().getLocalizedComponent(player, "teleport.subtitle")
+                        .replaceText(builder -> builder.match("%server%").replacement(serverName)),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)
         );
         player.showTitle(title);
 
-        // Sound
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f + (countdown * 0.1f));
 
-        // Particles
         Location loc = player.getLocation().add(0, 1, 0);
         player.getWorld().spawnParticle(Particle.PORTAL, loc, 10, 0.5, 0.5, 0.5, 0.1);
         player.getWorld().spawnParticle(Particle.ENCHANT, loc, 5, 0.3, 0.3, 0.3, 0.5);
     }
 
     public void teleportToServer(Player player, String serverName) {
-        // Final effects
         Location loc = player.getLocation();
         player.getWorld().spawnParticle(Particle.DRAGON_BREATH, loc, 20, 1, 1, 1, 0.1);
         player.getWorld().spawnParticle(Particle.END_ROD, loc, 15, 0.5, 1, 0.5, 0.1);
         player.playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
-        // Title
         Title farewell = Title.title(
-                miniMessage.deserialize("<gradient:#a8e6cf:#7fcdcd><bold>✨ Teleporting!</bold></gradient>"),
-                miniMessage.deserialize("<gray>Connecting to <yellow>" + serverName + "</yellow>..."),
+                plugin.getLangManager().getLocalizedComponent(player, "teleport.title"),
+                miniMessage.deserialize("<gradient:#ff6b6b:#ee5a52><bold>\uD83D\uDC4B\uD83D\uDC4B\uD83D\uDC4B</bold></gradient>"),
                 Title.Times.times(Duration.ZERO, Duration.ofSeconds(2), Duration.ofSeconds(1))
         );
         player.showTitle(farewell);
 
-        // Send to server via BungeeCord
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Connect");
         out.writeUTF(serverName);
@@ -273,6 +275,7 @@ public class TeleportManager {
         teleportTasks.values().forEach(BukkitTask::cancel);
         teleportTasks.clear();
         playerZones.clear();
+        stopAllSeaEffects();
     }
 
     public void onPlayerQuit(Player player) {
@@ -290,5 +293,105 @@ public class TeleportManager {
 
     public boolean hasZone(String id) {
         return zones.containsKey(id);
+    }
+
+    public boolean toggleSeaEffect(String zoneId) {
+        if (!zones.containsKey(zoneId)) {
+            return false;
+        }
+
+        if (zonesWithSeaEffect.contains(zoneId)) {
+            zonesWithSeaEffect.remove(zoneId);
+            BukkitTask task = seaEffectTasks.remove(zoneId);
+            if (task != null) {
+                task.cancel();
+            }
+            return false;
+        } else {
+            // Enable sea effect
+            zonesWithSeaEffect.add(zoneId);
+            startSeaEffect(zoneId);
+            return true;
+        }
+    }
+
+    private void startSeaEffect(String zoneId) {
+        TeleportZone zone = zones.get(zoneId);
+        if (zone == null) return;
+
+        BukkitTask task = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!zonesWithSeaEffect.contains(zoneId)) {
+                    cancel();
+                    return;
+                }
+
+                drawSeaBoundary(zone);
+            }
+        }.runTaskTimer(plugin, 0L, 10L); // Run every 10 ticks (2 times per second)
+
+        seaEffectTasks.put(zoneId, task);
+    }
+
+    private void drawSeaBoundary(TeleportZone zone) {
+        double minX = zone.getMinX();
+        double minY = zone.getMinY();
+        double minZ = zone.getMinZ();
+        double maxX = zone.getMaxX();
+        double maxY = zone.getMaxY();
+        double maxZ = zone.getMaxZ();
+
+        long currentTime = System.currentTimeMillis();
+
+        double baseStepSize = 1.2; // Base distance between particle points
+        int particlesPerTick = (int) ((maxX - minX) * (maxZ - minZ) / 6); // Adaptive particle count
+
+        double seaSurfaceY = (minY + maxY) / 2.0;
+
+        for (int i = 0; i < particlesPerTick; i++) {
+            double x = minX + Math.random() * (maxX - minX);
+            double z = minZ + Math.random() * (maxZ - minZ);
+
+            double wave1 = Math.sin((currentTime / 1000.0) + (x + z) * 0.4) * 1.2; // Increased from 0.4 to 1.2
+            double wave2 = Math.sin((currentTime / 1500.0) + (x * 0.8 + z * 0.6)) * 0.8; // Increased from 0.2 to 0.8
+            double wave3 = Math.sin((currentTime / 800.0) + (x * 0.3 + z * 0.9)) * 0.6; // Increased from 0.15 to 0.6
+            double wave4 = Math.sin((currentTime / 2000.0) + (x * 0.5 + z * 0.3)) * 0.4; // Additional wave layer
+            double totalWave = wave1 + wave2 + wave3 + wave4;
+
+            double finalY = seaSurfaceY + totalWave;
+
+            Particle.DustOptions dustOptions = new Particle.DustOptions(Color.AQUA, 1.4f);
+            double offsetX = x + (Math.random() - 0.5) * 0.3;
+            double offsetZ = z + (Math.random() - 0.5) * 0.3;
+            zone.getWorld().spawnParticle(Particle.DUST, offsetX, finalY, offsetZ, 1, 0.15, 0.1, 0.15, 0, dustOptions);
+
+            if (Math.random() < 0.15) {
+                zone.getWorld().spawnParticle(Particle.BUBBLE_POP, offsetX, finalY - 0.2, offsetZ, 1, 0.2, 0.1, 0.2, 0);
+            }
+
+            if (Math.random() < 0.08) {
+                zone.getWorld().spawnParticle(Particle.SPLASH, offsetX, finalY + 0.1, offsetZ, 3, 0.3, 0.2, 0.3, 0.2);
+            }
+
+            if (Math.random() < 0.02) {
+                zone.getWorld().spawnParticle(Particle.DOLPHIN, offsetX, finalY + 0.3, offsetZ, 1, 0.4, 0.3, 0.4, 0);
+            }
+
+            if (Math.random() < 0.05 && totalWave > 0.5) {
+                zone.getWorld().spawnParticle(Particle.FALLING_WATER, offsetX, finalY + 0.5, offsetZ, 2, 0.2, 0.1, 0.2, 0);
+            }
+        }
+    }
+
+
+    public void stopAllSeaEffects() {
+        zonesWithSeaEffect.clear();
+        seaEffectTasks.values().forEach(BukkitTask::cancel);
+        seaEffectTasks.clear();
+    }
+
+    public boolean hasSeaEffect(String zoneId) {
+        return zonesWithSeaEffect.contains(zoneId);
     }
 }

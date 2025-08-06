@@ -38,7 +38,7 @@ public class TeleportZone {
         double z = location.getZ();
         
         return x >= minX && x <= maxX &&
-               y >= minY && y <= maxY &&
+               y >= (minY - 5) && y <= (maxY + 5) &&
                z >= minZ && z <= maxZ;
     }
     

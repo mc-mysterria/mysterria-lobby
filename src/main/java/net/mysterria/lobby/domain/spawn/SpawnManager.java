@@ -55,7 +55,7 @@ public class SpawnManager {
 
     public void setSpawnLocation(Location location) {
         this.spawnLocation = location;
-        
+
         spawnConfig.set("spawn.world", location.getWorld().getName());
         spawnConfig.set("spawn.x", location.getX());
         spawnConfig.set("spawn.y", location.getY());
@@ -80,6 +80,7 @@ public class SpawnManager {
 
     public void teleportToSpawn(Player player) {
         if (hasSpawnLocation()) {
+            player.setFallDistance(0);
             player.teleport(spawnLocation);
         } else {
             player.teleport(player.getWorld().getSpawnLocation());

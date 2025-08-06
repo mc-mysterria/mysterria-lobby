@@ -38,7 +38,6 @@ public class ActionExecutor {
             String serverName = action.substring(11);
             MysterriaLobby.getInstance().getTeleportManager().teleportToServer(player, serverName);
         } else if (action.equals("[SERVER_SELECTOR]")) {
-            // Open server selector menu via config-driven system
             openMenu(player, "server_selector");
         } else if (action.startsWith("[SOUND] ")) {
             playSound(player, action.substring(8));
@@ -61,7 +60,6 @@ public class ActionExecutor {
     }
 
     private static void openMenu(Player player, String menuId) {
-        // Try Triumph GUI first, fallback to old system
         if (MysterriaLobby.getInstance().getTriumphMenuManager().hasMenu(menuId)) {
             MysterriaLobby.getInstance().getTriumphMenuManager().openMenu(player, menuId);
         }

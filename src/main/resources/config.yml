@@ -552,3 +552,40 @@ messages:
     en: "<gradient:#e91e63:#9c27b0>💎 Cosmetics system is coming soon! Stay tuned for amazing customization options!</gradient>"
     ua: "<gradient:#e91e63:#9c27b0>💎 Система косметики незабаром! Очікуйте дивовижні можливості налаштування!</gradient>"
     es: "<gradient:#e91e63:#9c27b0>💎 ¡El sistema de cosméticos llega pronto! ¡Mantente atento a increíbles opciones de personalización!</gradient>"
+
+# Teleport system messages
+teleport:
+  no_permission:
+    en: "<red>⛔ You don't have permission to access this teleporter!</red>"
+    ua: "<red>⛔ У вас немає дозволу для доступу до цього телепорта!</red>"
+    es: "<red>⛔ ¡No tienes permiso para acceder a este teletransportador!</red>"
+    
+  detected:
+    en: "<gradient:#4dd0e1:#26c6da>🌊 You've touched the portal waves! Slow falling activated. Teleporting to <white>%server%</white> in <yellow>%delay%</yellow> seconds...</gradient>"
+    ua: "<gradient:#4dd0e1:#26c6da>🌊 Ви торкнулися хвиль порталу! Повільне падіння активовано. Телепортація до <white>%server%</white> через <yellow>%delay%</yellow> секунд...</gradient>"
+    es: "<gradient:#4dd0e1:#26c6da>🌊 ¡Has tocado las olas del portal! Caída lenta activada. Teletransportando a <white>%server%</white> en <yellow>%delay%</yellow> segundos...</gradient>"
+    
+  title:
+    en: "<gradient:#a8e6cf:#7fcdcd><bold>✨ Teleporting!</bold></gradient>"
+    ua: "<gradient:#a8e6cf:#7fcdcd><bold>✨ Телепортація!</bold></gradient>"
+    es: "<gradient:#a8e6cf:#7fcdcd><bold>✨ ¡Teletransportando!</bold></gradient>"
+    
+  subtitle:
+    en: "<gray>Connecting to <yellow>%server%</yellow>...</gray>"
+    ua: "<gray>Підключення до <yellow>%server%</yellow>...</gray>"
+    es: "<gray>Conectando a <yellow>%server%</yellow>...</gray>"
+    
+  bounds_shown:
+    en: "<gradient:#00d4ff:#0099cc>🔍 Showing boundaries for zone '<white>%zone%</white>' for 10 seconds!</gradient>"
+    ua: "<gradient:#00d4ff:#0099cc>🔍 Показ меж для зони '<white>%zone%</white>' протягом 10 секунд!</gradient>"
+    es: "<gradient:#00d4ff:#0099cc>🔍 ¡Mostrando límites de la zona '<white>%zone%</white>' por 10 segundos!</gradient>"
+    
+  sea_enabled:
+    en: "<gradient:#4dd0e1:#26c6da>🌊 Sea effect <green>enabled</green> for zone '<white>%zone%</white>'!</gradient>"
+    ua: "<gradient:#4dd0e1:#26c6da>🌊 Ефект моря <green>увімкнено</green> для зони '<white>%zone%</white>'!</gradient>"
+    es: "<gradient:#4dd0e1:#26c6da>🌊 ¡Efecto de mar <green>habilitado</green> para la zona '<white>%zone%</white>'!</gradient>"
+    
+  sea_disabled:
+    en: "<gradient:#4dd0e1:#26c6da>🌊 Sea effect <red>disabled</red> for zone '<white>%zone%</white>'.</gradient>"
+    ua: "<gradient:#4dd0e1:#26c6da>🌊 Ефект моря <red>вимкнено</red> для зони '<white>%zone%</white>'.</gradient>"
+    es: "<gradient:#4dd0e1:#26c6da>🌊 Efecto de mar <red>deshabilitado</red> para la zona '<white>%zone%</white>'.</gradient>"

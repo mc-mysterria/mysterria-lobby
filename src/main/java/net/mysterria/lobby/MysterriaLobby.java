@@ -4,7 +4,7 @@ import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
 import net.mysterria.lobby.commands.LobbyCommands;
 import net.mysterria.lobby.commands.RulesCommand;
-import net.mysterria.lobby.commands.TeleportCommand;
+import net.mysterria.lobby.commands.ZonesCommand;
 import net.mysterria.lobby.config.ConfigManager;
 import net.mysterria.lobby.domain.items.JoinItemManager;
 import net.mysterria.lobby.config.LangManager;
@@ -69,7 +69,7 @@ public final class MysterriaLobby extends JavaPlugin {
         this.liteCommands = LiteBukkitFactory.builder("mysterria-lobby", this)
                 .commands(
                         new LobbyCommands(this),
-                        new TeleportCommand(this),
+                        new ZonesCommand(this),
                         rulesCommand
                 )
                 .build();
@@ -81,6 +81,7 @@ public final class MysterriaLobby extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WorldProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
         getServer().getPluginManager().registerEvents(new VoidDamageListener(this), this);
+        getServer().getPluginManager().registerEvents(new JumpPadListener(this), this);
     }
 
     public void reload() {
