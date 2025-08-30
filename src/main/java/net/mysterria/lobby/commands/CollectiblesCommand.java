@@ -12,8 +12,10 @@ import net.mysterria.lobby.domain.collectibles.PlayerCollectionProgress;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
+import java.util.Map;
 
 @Command(name = "collectibles", aliases = {"collect", "heads"})
 public class CollectiblesCommand {
@@ -277,5 +279,56 @@ public class CollectiblesCommand {
             .replace("%z%", String.format("%.0f", nearest.getLocation().getZ()));
         
         player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(nearestMessage));
+    }
+    
+    @Execute(name = "give")
+    @Permission("mysterria.lobby.collectibles.give")
+    public void executeGive(@Context Player player, @Arg("headType") String headType) {
+        if (!headsManager.isEnabled()) {
+            String disabledMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.system_disabled");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(disabledMessage));
+            return;
+        }
+        
+        ItemStack headItem = headsManager.createCollectibleHeadItem(headType);
+        if (headItem == null) {
+            String errorMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.unknown_head_type")
+                .replace("%head_type%", headType);
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(errorMessage));
+            return;
+        }
+        
+        player.getInventory().addItem(headItem);
+        
+        String successMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_given")
+            .replace("%head_type%", headType)
+            .replace("%head_name%", headsManager.getHeadsConfig().getHeadTypeName(headType));
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(successMessage));
+    }
+    
+    @Execute(name = "types")
+    @Permission("mysterria.lobby.collectibles.types")
+    public void executeTypes(@Context Player player) {
+        if (!headsManager.isEnabled()) {
+            String disabledMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.system_disabled");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(disabledMessage));
+            return;
+        }
+        
+        Map<String, String> headTypes = headsManager.getHeadsConfig().getHeadTypes();
+        
+        String headerMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.available_types_header")
+            .replace("%count%", String.valueOf(headTypes.size()));
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(headerMessage));
+        
+        for (Map.Entry<String, String> entry : headTypes.entrySet()) {
+            String typeMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_type_item")
+                .replace("%type_id%", entry.getKey())
+                .replace("%type_name%", entry.getValue());
+            
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(typeMessage));
+        }
     }
 }

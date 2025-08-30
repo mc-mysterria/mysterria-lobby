@@ -1,16 +1,19 @@
 package net.mysterria.lobby.domain.collectibles;
 
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.config.CollectibleHeadsConfig;
 import net.mysterria.lobby.util.SkullUtil;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.block.Block;
+import org.bukkit.block.Skull;
+import org.bukkit.NamespacedKey;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +26,7 @@ public class CollectibleHeadsManager {
     private final Map<String, ArmorStand> spawnedHeads;
     private final CollectionPersistence persistence;
     private final DiscordWebhookService webhookService;
+    private final CollectibleHeadsConfig headsConfig;
     private boolean enabled;
     
     public CollectibleHeadsManager(MysterriaLobby plugin) {
@@ -32,6 +36,7 @@ public class CollectibleHeadsManager {
         this.spawnedHeads = new ConcurrentHashMap<>();
         this.persistence = new CollectionPersistence(plugin);
         this.webhookService = new DiscordWebhookService(plugin);
+        this.headsConfig = new CollectibleHeadsConfig(plugin);
         reload();
     }
     
@@ -47,50 +52,19 @@ public class CollectibleHeadsManager {
             return;
         }
         
-        loadHeadsFromConfig();
+        headsConfig.reload();
+        Map<String, CollectibleHead> loadedHeads = headsConfig.loadHeads();
+        heads.putAll(loadedHeads);
+        
+        for (CollectibleHead head : heads.values()) {
+            headLocationMap.put(head.getLocation(), head.getId());
+        }
+        
         spawnAllHeads();
         
         plugin.getLogger().info("Loaded " + heads.size() + " collectible heads");
     }
     
-    private void loadHeadsFromConfig() {
-        ConfigurationSection headsSection = plugin.getConfig().getConfigurationSection("collectible_heads.heads");
-        if (headsSection == null) {
-            plugin.getLogger().warning("No collectible heads configured");
-            return;
-        }
-        
-        for (String headId : headsSection.getKeys(false)) {
-            try {
-                ConfigurationSection headSection = headsSection.getConfigurationSection(headId);
-                
-                String worldName = headSection.getString("world");
-                double x = headSection.getDouble("x");
-                double y = headSection.getDouble("y");
-                double z = headSection.getDouble("z");
-                float yaw = (float) headSection.getDouble("yaw", 0.0);
-                float pitch = (float) headSection.getDouble("pitch", 0.0);
-                
-                World world = Bukkit.getWorld(worldName);
-                if (world == null) {
-                    plugin.getLogger().warning("World '" + worldName + "' not found for collectible head: " + headId);
-                    continue;
-                }
-                
-                Location location = new Location(world, x, y, z, yaw, pitch);
-                String name = headSection.getString("name", headId);
-                String textureUrl = headSection.getString("texture_url", "");
-                String textureValue = headSection.getString("texture_value", "");
-                
-                CollectibleHead head = new CollectibleHead(headId, name, location, textureUrl, textureValue);
-                heads.put(headId, head);
-                headLocationMap.put(location, headId);
-                
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to load collectible head '" + headId + "': " + e.getMessage());
-            }
-        }
-    }
     
     private void spawnAllHeads() {
         for (CollectibleHead head : heads.values()) {
@@ -99,25 +73,32 @@ public class CollectibleHeadsManager {
     }
     
     private void spawnHead(CollectibleHead head) {
-        Location location = head.getLocation();
+        Location location = head.getLocation().clone();
         
-        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(location, EntityType.ARMOR_STAND);
+        // Place the actual head block instead of using armor stand
+        location.getBlock().setType(Material.PLAYER_HEAD);
+        
+        // Create an invisible marker armor stand slightly above for interaction
+        Location markerLocation = location.clone().add(0.5, 1.2, 0.5);
+        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(markerLocation, EntityType.ARMOR_STAND);
         armorStand.setVisible(false);
         armorStand.setGravity(false);
         armorStand.setMarker(true);
-        armorStand.setSmall(false);
+        armorStand.setSmall(true);
         armorStand.setBasePlate(false);
         armorStand.setArms(false);
         armorStand.setInvulnerable(true);
         armorStand.setPersistent(true);
         
-        ItemStack headItem = createHeadItem(head);
-        armorStand.getEquipment().setHelmet(headItem);
-        
         armorStand.setCustomName("collectible_head:" + head.getId());
         armorStand.setCustomNameVisible(false);
         
         spawnedHeads.put(head.getId(), armorStand);
+        
+        // Apply the texture to the placed head block
+        if (!head.getTextureUrl().isEmpty() || !head.getTextureValue().isEmpty()) {
+            applyTextureToHeadBlock(location, head);
+        }
     }
     
     private ItemStack createHeadItem(CollectibleHead head) {
@@ -282,5 +263,118 @@ public class CollectibleHeadsManager {
         }
         
         plugin.saveConfig();
+    }
+    
+    private void applyTextureToHeadBlock(Location location, CollectibleHead head) {
+        Block block = location.getBlock();
+        if (!(block.getState() instanceof Skull skull)) {
+            return;
+        }
+        
+        try {
+            ItemStack headItem = SkullUtil.createCustomHead(head.getTextureUrl());
+            SkullMeta meta = (SkullMeta) headItem.getItemMeta();
+            if (meta != null && meta.getPlayerProfile() != null) {
+                skull.setPlayerProfile(meta.getPlayerProfile());
+                skull.update();
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to apply texture to head block: " + e.getMessage());
+        }
+    }
+    
+    public ItemStack createCollectibleHeadItem(String headType) {
+        Map<String, String> headTypes = headsConfig.getHeadTypes();
+        if (!headTypes.containsKey(headType)) {
+            plugin.getLogger().warning("Unknown head type: " + headType);
+            return null;
+        }
+        
+        String texture = headsConfig.getHeadTypeTexture(headType);
+        String typeName = headsConfig.getHeadTypeName(headType);
+        
+        ItemStack headItem = SkullUtil.createCustomHead(texture);
+        ItemMeta meta = headItem.getItemMeta();
+        
+        if (meta != null) {
+            meta.setDisplayName("§6§l" + typeName + " Head");
+            
+            List<String> lore = new ArrayList<>();
+            lore.add("§7Place this head to create a");
+            lore.add("§7collectible for players to find!");
+            lore.add("");
+            lore.add("§e§lType: §f" + headType);
+            lore.add("§a§lCollectible Head");
+            
+            meta.setLore(lore);
+            
+            // Add custom data to identify it as a collectible head item
+            meta.getPersistentDataContainer().set(
+                new NamespacedKey(plugin, "collectible_head_type"), 
+                org.bukkit.persistence.PersistentDataType.STRING, 
+                headType
+            );
+            
+            headItem.setItemMeta(meta);
+        }
+        
+        return headItem;
+    }
+    
+    public boolean isCollectibleHeadItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+        
+        ItemMeta meta = item.getItemMeta();
+        return meta.getPersistentDataContainer().has(
+            new NamespacedKey(plugin, "collectible_head_type"), 
+            org.bukkit.persistence.PersistentDataType.STRING
+        );
+    }
+    
+    public String getHeadTypeFromItem(ItemStack item) {
+        if (!isCollectibleHeadItem(item)) {
+            return null;
+        }
+        
+        ItemMeta meta = item.getItemMeta();
+        return meta.getPersistentDataContainer().get(
+            new NamespacedKey(plugin, "collectible_head_type"), 
+            org.bukkit.persistence.PersistentDataType.STRING
+        );
+    }
+    
+    public boolean handleHeadPlacement(Player player, Location location, String headType) {
+        // Generate unique ID for this head
+        String headId = headType + "_" + System.currentTimeMillis();
+        String name = headsConfig.getHeadTypeName(headType);
+        String texture = headsConfig.getHeadTypeTexture(headType);
+        
+        CollectibleHead head = new CollectibleHead(headId, name, location, texture, "");
+        heads.put(headId, head);
+        headLocationMap.put(location, headId);
+        
+        // Save to config
+        headsConfig.saveHead(headId, name, location, texture, "", headType);
+        
+        // Spawn the head (will place the block and create marker)
+        spawnHead(head);
+        
+        // Send confirmation message to player
+        String message = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_placed")
+            .replace("%head_id%", headId)
+            .replace("%head_name%", name)
+            .replace("%x%", String.format("%.1f", location.getX()))
+            .replace("%y%", String.format("%.1f", location.getY()))
+            .replace("%z%", String.format("%.1f", location.getZ()));
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(message));
+        
+        return true;
+    }
+    
+    public CollectibleHeadsConfig getHeadsConfig() {
+        return headsConfig;
     }
 }

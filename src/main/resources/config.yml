@@ -613,31 +613,6 @@ collectible_heads:
     collection_particle: "HAPPY_VILLAGER"
     particle_count: 10
     particle_spread: 1.0
-  
-  # Collectible heads locations and properties
-  # Example configuration (disabled by default):
-  heads:
-    example_head_1:
-      name: "Ancient Relic"
-      world: "world"
-      x: 100.5
-      y: 64.0
-      z: 200.5
-      yaw: 0.0
-      pitch: 0.0
-      texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
-      texture_value: ""
-    
-    example_head_2:
-      name: "Crystal Skull"
-      world: "world"
-      x: 150.5
-      y: 70.0
-      z: 250.5
-      yaw: 45.0
-      pitch: 0.0
-      texture_url: "7f5b1c1f2b3a4c5d6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b"
-      texture_value: ""
 
   # Localized messages for the collectibles system
   messages:
@@ -760,15 +735,3 @@ collectible_heads:
       en: "<gradient:#2196f3:#1976d2>🧭 Nearest head: <white>%head_id%</white> (%head_name%) - <yellow>%distance% blocks</yellow> away at <blue>%x%, %y%, %z%</blue></gradient>"
       ua: "<gradient:#2196f3:#1976d2>🧭 Найближча голівка: <white>%head_id%</white> (%head_name%) - <yellow>%distance% блоків</yellow> від вас на <blue>%x%, %y%, %z%</blue></gradient>"
       es: "<gradient:#2196f3:#1976d2>🧭 Cabeza más cercana: <white>%head_id%</white> (%head_name%) - <yellow>%distance% bloques</yellow> de distancia en <blue>%x%, %y%, %z%</blue></gradient>"
-
-  # Head names (localized)
-  head_names:
-    example_head_1:
-      en: "Ancient Relic"
-      ua: "Давня реліквія"
-      es: "Reliquia Antigua"
-    
-    example_head_2:
-      en: "Crystal Skull"
-      ua: "Кристаловий череп"
-      es: "Cráneo de Cristal"

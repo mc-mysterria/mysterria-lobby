@@ -92,6 +92,7 @@ public final class MysterriaLobby extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new VoidDamageListener(this), this);
         getServer().getPluginManager().registerEvents(new JumpPadListener(this), this);
         getServer().getPluginManager().registerEvents(new CollectibleHeadsListener(this), this);
+        getServer().getPluginManager().registerEvents(new CollectibleHeadPlacementListener(this), this);
     }
 
     public void reload() {
