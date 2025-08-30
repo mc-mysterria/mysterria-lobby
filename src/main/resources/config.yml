@@ -589,3 +589,156 @@ teleport:
     en: "<gradient:#4dd0e1:#26c6da>🌊 Sea effect <red>disabled</red> for zone '<white>%zone%</white>'.</gradient>"
     ua: "<gradient:#4dd0e1:#26c6da>🌊 Ефект моря <red>вимкнено</red> для зони '<white>%zone%</white>'.</gradient>"
     es: "<gradient:#4dd0e1:#26c6da>🌊 Efecto de mar <red>deshabilitado</red> para la zona '<white>%zone%</white>'.</gradient>"
+
+# Collectible Heads System
+collectible_heads:
+  enabled: false
+  
+  # Discord webhook integration
+  discord:
+    webhook_url: ""  # Discord webhook URL for completion notifications
+    username: "Mysterria Lobby"
+    avatar_url: ""
+    footer_icon_url: ""
+    completion_title: "🎉 Collection Complete!"
+    completion_description: "**%player%** has found all %total% collectible heads in the lobby!\n\n⏰ Completion time: %time%\n🏆 Amazing exploration skills!"
+  
+  # Visual and sound effects
+  effects:
+    collection_sound: "ENTITY_PLAYER_LEVELUP"
+    completion_sound: "UI_TOAST_CHALLENGE_COMPLETE"
+    sound_volume: 1.0
+    sound_pitch: 1.5
+    completion_sound_pitch: 1.0
+    collection_particle: "HAPPY_VILLAGER"
+    particle_count: 10
+    particle_spread: 1.0
+  
+  # Collectible heads locations and properties
+  # Example configuration (disabled by default):
+  heads:
+    example_head_1:
+      name: "Ancient Relic"
+      world: "world"
+      x: 100.5
+      y: 64.0
+      z: 200.5
+      yaw: 0.0
+      pitch: 0.0
+      texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
+      texture_value: ""
+    
+    example_head_2:
+      name: "Crystal Skull"
+      world: "world"
+      x: 150.5
+      y: 70.0
+      z: 250.5
+      yaw: 45.0
+      pitch: 0.0
+      texture_url: "7f5b1c1f2b3a4c5d6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b"
+      texture_value: ""
+
+  # Localized messages for the collectibles system
+  messages:
+    system_disabled:
+      en: "<red>⛔ The collectible heads system is currently disabled.</red>"
+      ua: "<red>⛔ Система колекційних голівок зараз вимкнена.</red>"
+      es: "<red>⛔ El sistema de cabezas coleccionables está actualmente deshabilitado.</red>"
+    
+    collection_title:
+      en: "<gradient:#ffd700:#ff8c00><bold>✨ Head Collected!</bold></gradient>"
+      ua: "<gradient:#ffd700:#ff8c00><bold>✨ Голівку знайдено!</bold></gradient>"
+      es: "<gradient:#ffd700:#ff8c00><bold>✨ ¡Cabeza Recolectada!</bold></gradient>"
+    
+    collection_subtitle:
+      en: "<gray>%collected%/%total% collected</gray>"
+      ua: "<gray>%collected%/%total% знайдено</gray>"
+      es: "<gray>%collected%/%total% recolectadas</gray>"
+    
+    collection_chat:
+      en: "<gradient:#4ecdc4:#45b7aa>🎯 You found the <white>%head_name%</white>! Progress: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
+      ua: "<gradient:#4ecdc4:#45b7aa>🎯 Ви знайшли <white>%head_name%</white>! Прогрес: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
+      es: "<gradient:#4ecdc4:#45b7aa>🎯 ¡Encontraste <white>%head_name%</white>! Progreso: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
+    
+    already_collected:
+      en: "<gradient:#ff9800:#f57c00>🔄 You already collected <white>%head_name%</white>! Progress: <yellow>%collected%/%total%</yellow></gradient>"
+      ua: "<gradient:#ff9800:#f57c00>🔄 Ви вже знайшли <white>%head_name%</white>! Прогрес: <yellow>%collected%/%total%</yellow></gradient>"
+      es: "<gradient:#ff9800:#f57c00>🔄 ¡Ya recolectaste <white>%head_name%</white>! Progreso: <yellow>%collected%/%total%</yellow></gradient>"
+    
+    completion_title:
+      en: "<gradient:#00ff00:#32cd32><bold>🎉 COLLECTION COMPLETE!</bold></gradient>"
+      ua: "<gradient:#00ff00:#32cd32><bold>🎉 КОЛЕКЦІЮ ЗАВЕРШЕНО!</bold></gradient>"
+      es: "<gradient:#00ff00:#32cd32><bold>🎉 ¡COLECCIÓN COMPLETA!</bold></gradient>"
+    
+    completion_subtitle:
+      en: "<gradient:#ffd700:#ffb347>All %total% heads found! 🏆</gradient>"
+      ua: "<gradient:#ffd700:#ffb347>Всі %total% голівок знайдено! 🏆</gradient>"
+      es: "<gradient:#ffd700:#ffb347>¡Las %total% cabezas encontradas! 🏆</gradient>"
+    
+    completion_chat:
+      en: "<gradient:#00ff00:#32cd32><bold>🎊 CONGRATULATIONS! 🎊</bold></gradient>\n<white>You have found all <yellow>%total%</yellow> collectible heads in the lobby!</white>\n<gradient:#ffd700:#ff8c00>🏆 You are a true explorer! The Discord community has been notified of your achievement!</gradient>"
+      ua: "<gradient:#00ff00:#32cd32><bold>🎊 ВІТАЄМО! 🎊</bold></gradient>\n<white>Ви знайшли всі <yellow>%total%</yellow> колекційних голівок у лобі!</white>\n<gradient:#ffd700:#ff8c00>🏆 Ви справжній дослідник! Discord спільнота була сповіщена про ваше досягнення!</gradient>"
+      es: "<gradient:#00ff00:#32cd32><bold>🎊 ¡FELICITACIONES! 🎊</bold></gradient>\n<white>¡Has encontrado todas las <yellow>%total%</yellow> cabezas coleccionables en el lobby!</white>\n<gradient:#ffd700:#ff8c00>🏆 ¡Eres un verdadero explorador! ¡La comunidad de Discord ha sido notificada de tu logro!</gradient>"
+    
+    progress_info:
+      en: "<gradient:#667eea:#764ba2><bold>📊 Your Collection Progress</bold></gradient>\n<white>Collected: <green>%collected%</green>/<yellow>%total%</yellow> heads (<green>%percentage%%</green> complete)</white>"
+      ua: "<gradient:#667eea:#764ba2><bold>📊 Ваш прогрес колекції</bold></gradient>\n<white>Зібрано: <green>%collected%</green>/<yellow>%total%</yellow> голівок (<green>%percentage%%</green> завершено)</white>"
+      es: "<gradient:#667eea:#764ba2><bold>📊 Tu Progreso de Colección</bold></gradient>\n<white>Recolectadas: <green>%collected%</green>/<yellow>%total%</yellow> cabezas (<green>%percentage%%</green> completado)</white>"
+    
+    collected_list_header:
+      en: "<gradient:#4ecdc4:#45b7aa><bold>📋 Collected Heads:</bold></gradient>"
+      ua: "<gradient:#4ecdc4:#45b7aa><bold>📋 Зібрані голівки:</bold></gradient>"
+      es: "<gradient:#4ecdc4:#45b7aa><bold>📋 Cabezas Recolectadas:</bold></gradient>"
+    
+    collected_list_item:
+      en: "<green>  ✓</green> <white>%head_name%</white>"
+      ua: "<green>  ✓</green> <white>%head_name%</white>"
+      es: "<green>  ✓</green> <white>%head_name%</white>"
+    
+    system_reloaded:
+      en: "<gradient:#4caf50:#45a049>✅ Collectible heads system reloaded! Loaded <yellow>%count%</yellow> heads.</gradient>"
+      ua: "<gradient:#4caf50:#45a049>✅ Система колекційних голівок перезавантажена! Завантажено <yellow>%count%</yellow> голівок.</gradient>"
+      es: "<gradient:#4caf50:#45a049>✅ ¡Sistema de cabezas coleccionables recargado! Cargadas <yellow>%count%</yellow> cabezas.</gradient>"
+    
+    all_heads_header:
+      en: "<gradient:#9c27b0:#673ab7><bold>🗂️ All Collectible Heads (%total% total):</bold></gradient>"
+      ua: "<gradient:#9c27b0:#673ab7><bold>🗂️ Всі колекційні голівки (всього %total%):</bold></gradient>"
+      es: "<gradient:#9c27b0:#673ab7><bold>🗂️ Todas las Cabezas Coleccionables (%total% total):</bold></gradient>"
+    
+    head_list_item:
+      en: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
+      ua: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
+      es: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
+    
+    player_not_found:
+      en: "<red>❌ Player '%player%' not found.</red>"
+      ua: "<red>❌ Гравця '%player%' не знайдено.</red>"
+      es: "<red>❌ Jugador '%player%' no encontrado.</red>"
+    
+    other_progress_info:
+      en: "<gradient:#667eea:#764ba2><bold>📊 %player%'s Collection Progress</bold></gradient>\n<white>Collected: <green>%collected%</green>/<yellow>%total%</yellow> heads (<green>%percentage%%</green> complete)</white>"
+      ua: "<gradient:#667eea:#764ba2><bold>📊 Прогрес колекції гравця %player%</bold></gradient>\n<white>Зібрано: <green>%collected%</green>/<yellow>%total%</yellow> голівок (<green>%percentage%%</green> завершено)</white>"
+      es: "<gradient:#667eea:#764ba2><bold>📊 Progreso de Colección de %player%</bold></gradient>\n<white>Recolectadas: <green>%collected%</green>/<yellow>%total%</yellow> cabezas (<green>%percentage%%</green> completado)</white>"
+    
+    progress_reset:
+      en: "<gradient:#f44336:#d32f2f>🗑️ Collectible heads progress for <white>%player%</white> has been reset.</gradient>"
+      ua: "<gradient:#f44336:#d32f2f>🗑️ Прогрес колекційних голівок для <white>%player%</white> був скинутий.</gradient>"
+      es: "<gradient:#f44336:#d32f2f>🗑️ El progreso de cabezas coleccionables para <white>%player%</white> ha sido reiniciado.</gradient>"
+    
+    your_progress_reset:
+      en: "<gradient:#f44336:#d32f2f>🗑️ Your collectible heads progress has been reset by an administrator.</gradient>"
+      ua: "<gradient:#f44336:#d32f2f>🗑️ Ваш прогрес колекційних голівок був скинутий адміністратором.</gradient>"
+      es: "<gradient:#f44336:#d32f2f>🗑️ Tu progreso de cabezas coleccionables ha sido reiniciado por un administrador.</gradient>"
+
+  # Head names (localized)
+  head_names:
+    example_head_1:
+      en: "Ancient Relic"
+      ua: "Давня реліквія"
+      es: "Reliquia Antigua"
+    
+    example_head_2:
+      en: "Crystal Skull"
+      ua: "Кристаловий череп"
+      es: "Cráneo de Cristal"

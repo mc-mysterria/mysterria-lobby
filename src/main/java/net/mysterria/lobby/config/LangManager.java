@@ -168,4 +168,8 @@ public class LangManager {
     public java.util.Set<String> getAvailableLanguages() {
         return availableLanguages.keySet();
     }
+    
+    public MiniMessage getMiniMessage() {
+        return miniMessage;
+    }
 }
