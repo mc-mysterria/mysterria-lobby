@@ -730,6 +730,36 @@ collectible_heads:
       en: "<gradient:#f44336:#d32f2f>🗑️ Your collectible heads progress has been reset by an administrator.</gradient>"
       ua: "<gradient:#f44336:#d32f2f>🗑️ Ваш прогрес колекційних голівок був скинутий адміністратором.</gradient>"
       es: "<gradient:#f44336:#d32f2f>🗑️ Tu progreso de cabezas coleccionables ha sido reiniciado por un administrador.</gradient>"
+    
+    head_placed:
+      en: "<gradient:#4caf50:#45a049>✅ Collectible head '<white>%head_id%</white>' (%head_name%) placed at <yellow>%x%, %y%, %z%</yellow>!</gradient>"
+      ua: "<gradient:#4caf50:#45a049>✅ Колекційна голівка '<white>%head_id%</white>' (%head_name%) розміщена на <yellow>%x%, %y%, %z%</yellow>!</gradient>"
+      es: "<gradient:#4caf50:#45a049>✅ ¡Cabeza coleccionable '<white>%head_id%</white>' (%head_name%) colocada en <yellow>%x%, %y%, %z%</yellow>!</gradient>"
+    
+    head_already_exists:
+      en: "<red>❌ A collectible head with ID '<white>%head_id%</white>' already exists!</red>"
+      ua: "<red>❌ Колекційна голівка з ID '<white>%head_id%</white>' вже існує!</red>"
+      es: "<red>❌ ¡Ya existe una cabeza coleccionable con ID '<white>%head_id%</white>'!</red>"
+    
+    head_removed:
+      en: "<gradient:#f44336:#d32f2f>🗑️ Collectible head '<white>%head_id%</white>' has been removed.</gradient>"
+      ua: "<gradient:#f44336:#d32f2f>🗑️ Колекційна голівка '<white>%head_id%</white>' була видалена.</gradient>"
+      es: "<gradient:#f44336:#d32f2f>🗑️ La cabeza coleccionable '<white>%head_id%</white>' ha sido eliminada.</gradient>"
+    
+    head_not_found:
+      en: "<red>❌ No collectible head found with ID '<white>%head_id%</white>'.</red>"
+      ua: "<red>❌ Не знайдено колекційної голівки з ID '<white>%head_id%</white>'.</red>"
+      es: "<red>❌ No se encontró cabeza coleccionable con ID '<white>%head_id%</white>'.</red>"
+    
+    no_heads_in_world:
+      en: "<yellow>⚠️ No collectible heads found in your current world.</yellow>"
+      ua: "<yellow>⚠️ Не знайдено колекційних голівок у вашому поточному світі.</yellow>"
+      es: "<yellow>⚠️ No se encontraron cabezas coleccionables en tu mundo actual.</yellow>"
+    
+    nearest_head:
+      en: "<gradient:#2196f3:#1976d2>🧭 Nearest head: <white>%head_id%</white> (%head_name%) - <yellow>%distance% blocks</yellow> away at <blue>%x%, %y%, %z%</blue></gradient>"
+      ua: "<gradient:#2196f3:#1976d2>🧭 Найближча голівка: <white>%head_id%</white> (%head_name%) - <yellow>%distance% блоків</yellow> від вас на <blue>%x%, %y%, %z%</blue></gradient>"
+      es: "<gradient:#2196f3:#1976d2>🧭 Cabeza más cercana: <white>%head_id%</white> (%head_name%) - <yellow>%distance% bloques</yellow> de distancia en <blue>%x%, %y%, %z%</blue></gradient>"
 
   # Head names (localized)
   head_names:

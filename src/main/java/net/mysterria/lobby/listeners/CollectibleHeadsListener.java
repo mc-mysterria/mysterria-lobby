@@ -10,7 +10,10 @@ import org.bukkit.Sound;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -25,7 +28,7 @@ public class CollectibleHeadsListener implements Listener {
         this.headsManager = plugin.getCollectibleHeadsManager();
     }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event) {
         if (!headsManager.isEnabled()) {
             return;
@@ -50,7 +53,7 @@ public class CollectibleHeadsListener implements Listener {
         handleHeadCollection(player, headId, armorStand.getLocation());
     }
     
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerArmorStandManipulate(PlayerArmorStandManipulateEvent event) {
         if (!headsManager.isEnabled()) {
             return;
@@ -200,5 +203,43 @@ public class CollectibleHeadsListener implements Listener {
             .replace("%total%", String.valueOf(headsManager.getTotalHeads()));
         
         player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(chatMessage));
+    }
+    
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (!headsManager.isEnabled()) {
+            return;
+        }
+        
+        if (!(event.getEntity() instanceof ArmorStand armorStand)) {
+            return;
+        }
+        
+        if (headsManager.isCollectibleHead(armorStand)) {
+            event.setCancelled(true);
+        }
+    }
+    
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (!headsManager.isEnabled()) {
+            return;
+        }
+        
+        if (!(event.getEntity() instanceof ArmorStand armorStand)) {
+            return;
+        }
+        
+        if (headsManager.isCollectibleHead(armorStand)) {
+            event.setCancelled(true);
+            
+            // If it's a player damaging the armor stand, treat it as a collection attempt
+            if (event.getDamager() instanceof Player player) {
+                String headId = headsManager.getHeadIdFromArmorStand(armorStand);
+                if (headId != null) {
+                    handleHeadCollection(player, headId, armorStand.getLocation());
+                }
+            }
+        }
     }
 }

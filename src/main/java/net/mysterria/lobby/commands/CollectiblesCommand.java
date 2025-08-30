@@ -10,6 +10,7 @@ import net.mysterria.lobby.domain.collectibles.CollectibleHead;
 import net.mysterria.lobby.domain.collectibles.CollectibleHeadsManager;
 import net.mysterria.lobby.domain.collectibles.PlayerCollectionProgress;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
@@ -176,5 +177,105 @@ public class CollectiblesCommand {
             String playerMessage = plugin.getLangManager().getLocalizedString(targetPlayer, "collectible_heads.messages.your_progress_reset");
             targetPlayer.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(playerMessage));
         }
+    }
+    
+    @Execute(name = "place")
+    @Permission("mysterria.lobby.collectibles.place")
+    public void executePlace(@Context Player player, @Arg("headId") String headId, @Arg("headName") String headName, @Arg("textureUrl") String textureUrl) {
+        Location location = player.getLocation();
+        
+        if (!headsManager.isEnabled()) {
+            String disabledMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.system_disabled");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(disabledMessage));
+            return;
+        }
+        
+        boolean success = headsManager.addHead(headId, headName, location, textureUrl, "");
+        
+        if (!success) {
+            String errorMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_already_exists")
+                .replace("%head_id%", headId);
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(errorMessage));
+            return;
+        }
+        
+        headsManager.saveHeadsToConfig();
+        
+        String successMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_placed")
+            .replace("%head_id%", headId)
+            .replace("%head_name%", headName)
+            .replace("%x%", String.format("%.1f", location.getX()))
+            .replace("%y%", String.format("%.1f", location.getY()))
+            .replace("%z%", String.format("%.1f", location.getZ()));
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(successMessage));
+    }
+    
+    @Execute(name = "remove")
+    @Permission("mysterria.lobby.collectibles.remove")
+    public void executeRemove(@Context Player player, @Arg("headId") String headId) {
+        if (!headsManager.isEnabled()) {
+            String disabledMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.system_disabled");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(disabledMessage));
+            return;
+        }
+        
+        boolean success = headsManager.removeHead(headId);
+        
+        if (!success) {
+            String errorMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_not_found")
+                .replace("%head_id%", headId);
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(errorMessage));
+            return;
+        }
+        
+        headsManager.saveHeadsToConfig();
+        
+        String successMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.head_removed")
+            .replace("%head_id%", headId);
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(successMessage));
+    }
+    
+    @Execute(name = "nearest")
+    @Permission("mysterria.lobby.collectibles.nearest")
+    public void executeNearest(@Context Player player) {
+        if (!headsManager.isEnabled()) {
+            String disabledMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.system_disabled");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(disabledMessage));
+            return;
+        }
+        
+        Location playerLoc = player.getLocation();
+        CollectibleHead nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+        
+        for (CollectibleHead head : headsManager.getAllHeads()) {
+            if (!head.getLocation().getWorld().equals(playerLoc.getWorld())) {
+                continue;
+            }
+            
+            double distance = head.getLocation().distance(playerLoc);
+            if (distance < nearestDistance) {
+                nearestDistance = distance;
+                nearest = head;
+            }
+        }
+        
+        if (nearest == null) {
+            String noHeadsMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.no_heads_in_world");
+            player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(noHeadsMessage));
+            return;
+        }
+        
+        String nearestMessage = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.nearest_head")
+            .replace("%head_id%", nearest.getId())
+            .replace("%head_name%", nearest.getName())
+            .replace("%distance%", String.format("%.1f", nearestDistance))
+            .replace("%x%", String.format("%.0f", nearest.getLocation().getX()))
+            .replace("%y%", String.format("%.0f", nearest.getLocation().getY()))
+            .replace("%z%", String.format("%.0f", nearest.getLocation().getZ()));
+        
+        player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(nearestMessage));
     }
 }

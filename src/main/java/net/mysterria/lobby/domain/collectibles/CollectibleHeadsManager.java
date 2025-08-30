@@ -231,4 +231,56 @@ public class CollectibleHeadsManager {
     public CollectionPersistence getCollectionPersistence() {
         return persistence;
     }
+    
+    public boolean addHead(String headId, String name, Location location, String textureUrl, String textureValue) {
+        if (heads.containsKey(headId)) {
+            return false; // Head already exists
+        }
+        
+        CollectibleHead head = new CollectibleHead(headId, name, location, textureUrl, textureValue);
+        heads.put(headId, head);
+        headLocationMap.put(location, headId);
+        
+        if (enabled) {
+            spawnHead(head);
+        }
+        
+        return true;
+    }
+    
+    public boolean removeHead(String headId) {
+        CollectibleHead head = heads.get(headId);
+        if (head == null) {
+            return false;
+        }
+        
+        heads.remove(headId);
+        headLocationMap.remove(head.getLocation());
+        
+        ArmorStand armorStand = spawnedHeads.remove(headId);
+        if (armorStand != null && !armorStand.isDead()) {
+            armorStand.remove();
+        }
+        
+        return true;
+    }
+    
+    public void saveHeadsToConfig() {
+        plugin.getConfig().set("collectible_heads.heads", null);
+        
+        for (CollectibleHead head : heads.values()) {
+            String path = "collectible_heads.heads." + head.getId();
+            plugin.getConfig().set(path + ".name", head.getName());
+            plugin.getConfig().set(path + ".world", head.getLocation().getWorld().getName());
+            plugin.getConfig().set(path + ".x", head.getLocation().getX());
+            plugin.getConfig().set(path + ".y", head.getLocation().getY());
+            plugin.getConfig().set(path + ".z", head.getLocation().getZ());
+            plugin.getConfig().set(path + ".yaw", head.getLocation().getYaw());
+            plugin.getConfig().set(path + ".pitch", head.getLocation().getPitch());
+            plugin.getConfig().set(path + ".texture_url", head.getTextureUrl());
+            plugin.getConfig().set(path + ".texture_value", head.getTextureValue());
+        }
+        
+        plugin.saveConfig();
+    }
 }
