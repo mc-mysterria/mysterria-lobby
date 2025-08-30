@@ -52,7 +52,7 @@ public class CollectiblesCommand {
             for (String headId : progress.getCollectedHeads()) {
                 CollectibleHead head = headsManager.getHeadById(headId);
                 if (head != null) {
-                    String headName = plugin.getLangManager().getLocalizedString(player, "collectible_heads.head_names." + headId);
+                    String headName = plugin.getLangManager().getLocalizedString(player, "collectible_heads.head_names." + head.getHeadType());
                     String listItem = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.collected_list_item")
                         .replace("%head_name%", headName);
                     
@@ -96,7 +96,7 @@ public class CollectiblesCommand {
         player.sendMessage(plugin.getLangManager().getMiniMessage().deserialize(headerMessage));
         
         for (CollectibleHead head : allHeads) {
-            String headName = plugin.getLangManager().getLocalizedString(player, "collectible_heads.head_names." + head.getId());
+            String headName = plugin.getLangManager().getLocalizedString(player, "collectible_heads.head_names." + head.getHeadType());
             String location = String.format("%.0f, %.0f, %.0f in %s", 
                 head.getLocation().getX(), 
                 head.getLocation().getY(), 

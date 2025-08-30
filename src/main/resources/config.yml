@@ -735,3 +735,25 @@ collectible_heads:
       en: "<gradient:#2196f3:#1976d2>🧭 Nearest head: <white>%head_id%</white> (%head_name%) - <yellow>%distance% blocks</yellow> away at <blue>%x%, %y%, %z%</blue></gradient>"
       ua: "<gradient:#2196f3:#1976d2>🧭 Найближча голівка: <white>%head_id%</white> (%head_name%) - <yellow>%distance% блоків</yellow> від вас на <blue>%x%, %y%, %z%</blue></gradient>"
       es: "<gradient:#2196f3:#1976d2>🧭 Cabeza más cercana: <white>%head_id%</white> (%head_name%) - <yellow>%distance% bloques</yellow> de distancia en <blue>%x%, %y%, %z%</blue></gradient>"
+
+  # Localized names for collectible head types
+  head_names:
+    ancient_relic:
+      en: "Ancient Relic"
+      ua: "Стародавня Реліквія"
+      es: "Reliquia Antigua"
+    
+    crystal_skull:
+      en: "Crystal Skull"
+      ua: "Кристаловий Череп"
+      es: "Cráneo de Cristal"
+    
+    golden_mask:
+      en: "Golden Mask"
+      ua: "Золота Маска"
+      es: "Máscara Dorada"
+    
+    mysterious_orb:
+      en: "Mysterious Orb"
+      ua: "Містичний Шарик"
+      es: "Orbe Misterioso"

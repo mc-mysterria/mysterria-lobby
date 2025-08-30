@@ -72,7 +72,7 @@ public class CollectibleHeadsConfig {
                 String textureValue = headSection.getString("texture_value", "");
                 String headType = headSection.getString("head_type", "default");
                 
-                CollectibleHead head = new CollectibleHead(headId, name, location, textureUrl, textureValue);
+                CollectibleHead head = new CollectibleHead(headId, name, location, textureUrl, textureValue, headType);
                 heads.put(headId, head);
                 
             } catch (Exception e) {

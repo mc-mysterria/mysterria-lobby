@@ -145,7 +145,7 @@ public class CollectibleHeadsListener implements Listener {
     
     private void sendCollectionMessage(Player player, CollectibleHead head, PlayerCollectionProgress progress) {
         String headName = plugin.getLangManager().getLocalizedString(player, 
-            "collectible_heads.head_names." + head.getId());
+            "collectible_heads.head_names." + head.getHeadType());
         
         // Send title/subtitle
         String title = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.collection_title")
@@ -167,8 +167,10 @@ public class CollectibleHeadsListener implements Listener {
     }
     
     private void sendAlreadyCollectedMessage(Player player, String headId, PlayerCollectionProgress progress) {
+        CollectibleHead head = headsManager.getHeadById(headId);
+        String headType = head != null ? head.getHeadType() : headId;
         String headName = plugin.getLangManager().getLocalizedString(player, 
-            "collectible_heads.head_names." + headId);
+            "collectible_heads.head_names." + headType);
         
         String message = plugin.getLangManager().getLocalizedString(player, "collectible_heads.messages.already_collected")
             .replace("%head_name%", headName)

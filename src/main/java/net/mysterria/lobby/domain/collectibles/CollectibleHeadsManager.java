@@ -75,30 +75,27 @@ public class CollectibleHeadsManager {
     private void spawnHead(CollectibleHead head) {
         Location location = head.getLocation().clone();
         
-        // Place the actual head block instead of using armor stand
-        location.getBlock().setType(Material.PLAYER_HEAD);
-        
-        // Create an invisible marker armor stand slightly above for interaction
-        Location markerLocation = location.clone().add(0.5, 1.2, 0.5);
-        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(markerLocation, EntityType.ARMOR_STAND);
-        armorStand.setVisible(false);
+        // Create armor stand at the exact location (ground level)
+        // Position it so the head appears at ground level by moving the armor stand down
+        Location armorStandLocation = location.clone().add(0, -1.62, 0); // Move down so head is at ground level
+        ArmorStand armorStand = (ArmorStand) location.getWorld().spawnEntity(armorStandLocation, EntityType.ARMOR_STAND);
+        armorStand.setVisible(false);  // Hide the armor stand body, show only the head
         armorStand.setGravity(false);
-        armorStand.setMarker(true);
-        armorStand.setSmall(true);
+        armorStand.setMarker(false);  // Don't set as marker so it can be interacted with
+        armorStand.setSmall(false);   // Use full size armor stand
         armorStand.setBasePlate(false);
         armorStand.setArms(false);
         armorStand.setInvulnerable(true);
         armorStand.setPersistent(true);
         
+        // Set the head item on the armor stand
+        ItemStack headItem = createHeadItem(head);
+        armorStand.getEquipment().setHelmet(headItem);
+        
         armorStand.setCustomName("collectible_head:" + head.getId());
         armorStand.setCustomNameVisible(false);
         
         spawnedHeads.put(head.getId(), armorStand);
-        
-        // Apply the texture to the placed head block
-        if (!head.getTextureUrl().isEmpty() || !head.getTextureValue().isEmpty()) {
-            applyTextureToHeadBlock(location, head);
-        }
     }
     
     private ItemStack createHeadItem(CollectibleHead head) {
@@ -351,7 +348,7 @@ public class CollectibleHeadsManager {
         String name = headsConfig.getHeadTypeName(headType);
         String texture = headsConfig.getHeadTypeTexture(headType);
         
-        CollectibleHead head = new CollectibleHead(headId, name, location, texture, "");
+        CollectibleHead head = new CollectibleHead(headId, name, location, texture, "", headType);
         heads.put(headId, head);
         headLocationMap.put(location, headId);
         
