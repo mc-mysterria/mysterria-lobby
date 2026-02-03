@@ -246,7 +246,7 @@ public class TeleportManager {
 
     public void teleportToServer(Player player, String serverName) {
         Location loc = player.getLocation();
-        player.getWorld().spawnParticle(Particle.DRAGON_BREATH, loc, 20, 1, 1, 1, 0.1);
+        player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, loc, 20, 1, 1, 1, 0.1);
         player.getWorld().spawnParticle(Particle.END_ROD, loc, 15, 0.5, 1, 0.5, 0.1);
         player.playSound(loc, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
