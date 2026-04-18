@@ -28,7 +28,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    implementation 'net.kyori:adventure-text-minimessage:5.0.0'
+    implementation("net.kyori:adventure-text-minimessage:5.0.0")
     implementation("dev.triumphteam:triumph-gui-paper:3.1.13")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
 }
@@ -42,7 +42,6 @@ processResources {
 
 shadowJar {
     archiveClassifier = ''
-    relocate 'net.kyori.adventure.text.minimessage', 'net.mysterria.lobby.libs.minimessage'
 }
 
 build {
