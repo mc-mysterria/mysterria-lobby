@@ -2,20 +2,18 @@ package net.mysterria.lobby;
 
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
-import net.mysterria.lobby.commands.CollectiblesCommand;
 import net.mysterria.lobby.commands.LobbyCommands;
 import net.mysterria.lobby.commands.RulesCommand;
 import net.mysterria.lobby.commands.ZonesCommand;
 import net.mysterria.lobby.config.ConfigManager;
-import net.mysterria.lobby.domain.items.JoinItemManager;
 import net.mysterria.lobby.config.LangManager;
-import net.mysterria.lobby.listeners.*;
-import net.mysterria.lobby.gui.TriumphMenuManager;
-import net.mysterria.lobby.domain.collectibles.CollectibleHeadsManager;
+import net.mysterria.lobby.domain.items.JoinItemManager;
 import net.mysterria.lobby.domain.player.PlayerVisibilityManager;
 import net.mysterria.lobby.domain.protection.WorldProtectionManager;
-import net.mysterria.lobby.domain.zones.TeleportManager;
 import net.mysterria.lobby.domain.spawn.SpawnManager;
+import net.mysterria.lobby.domain.zones.TeleportManager;
+import net.mysterria.lobby.gui.TriumphMenuManager;
+import net.mysterria.lobby.listeners.*;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MysterriaLobby extends JavaPlugin {
@@ -29,7 +27,6 @@ public final class MysterriaLobby extends JavaPlugin {
     private WorldProtectionManager worldProtectionManager;
     private JoinItemManager joinItemManager;
     private SpawnManager spawnManager;
-    private CollectibleHeadsManager collectibleHeadsManager;
     private RulesCommand rulesCommand;
     private LiteCommands<org.bukkit.command.CommandSender> liteCommands;
 
@@ -47,7 +44,6 @@ public final class MysterriaLobby extends JavaPlugin {
         this.worldProtectionManager = new WorldProtectionManager(this);
         this.joinItemManager = new JoinItemManager(this);
         this.spawnManager = new SpawnManager(this);
-        this.collectibleHeadsManager = new CollectibleHeadsManager(this);
         this.rulesCommand = new RulesCommand(this);
 
         setupCommands();
@@ -65,10 +61,6 @@ public final class MysterriaLobby extends JavaPlugin {
         if (teleportManager != null) {
             teleportManager.cancelAllTeleports();
         }
-        
-        if (collectibleHeadsManager != null) {
-            collectibleHeadsManager.shutdown();
-        }
 
         getLogger().info("MysterriaLobby has been disabled!");
     }
@@ -78,7 +70,6 @@ public final class MysterriaLobby extends JavaPlugin {
                 .commands(
                         new LobbyCommands(this),
                         new ZonesCommand(this),
-                        new CollectiblesCommand(this),
                         rulesCommand
                 )
                 .build();
@@ -90,9 +81,7 @@ public final class MysterriaLobby extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WorldProtectionListener(this), this);
         getServer().getPluginManager().registerEvents(new MenuListener(this), this);
         getServer().getPluginManager().registerEvents(new VoidDamageListener(this), this);
-        getServer().getPluginManager().registerEvents(new JumpPadListener(this), this);
-        getServer().getPluginManager().registerEvents(new CollectibleHeadsListener(this), this);
-        getServer().getPluginManager().registerEvents(new CollectibleHeadPlacementListener(this), this);
+        getServer().getPluginManager().registerEvents(new JumpPadListener(), this);
     }
 
     public void reload() {
@@ -103,7 +92,6 @@ public final class MysterriaLobby extends JavaPlugin {
         playerVisibilityManager.reload();
         worldProtectionManager.reload();
         spawnManager.reload();
-        collectibleHeadsManager.reload();
         rulesCommand.reload();
     }
 
@@ -146,8 +134,5 @@ public final class MysterriaLobby extends JavaPlugin {
     public RulesCommand getRulesCommand() {
         return rulesCommand;
     }
-    
-    public CollectibleHeadsManager getCollectibleHeadsManager() {
-        return collectibleHeadsManager;
-    }
+
 }

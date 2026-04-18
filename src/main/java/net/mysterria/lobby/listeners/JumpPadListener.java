@@ -1,6 +1,5 @@
 package net.mysterria.lobby.listeners;
 
-import net.mysterria.lobby.MysterriaLobby;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -17,12 +16,10 @@ import java.util.Set;
 
 public class JumpPadListener implements Listener {
 
-    private final MysterriaLobby plugin;
     private final Map<Material, Double> jumpPowerMap;
     private final Set<Material> pressurePlates;
 
-    public JumpPadListener(MysterriaLobby plugin) {
-        this.plugin = plugin;
+    public JumpPadListener() {
         this.jumpPowerMap = new EnumMap<>(Material.class);
         this.pressurePlates = new HashSet<>();
         

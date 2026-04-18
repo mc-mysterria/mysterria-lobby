@@ -140,12 +140,10 @@ public class TriumphMenuManager {
     }
 
     private static class MenuData {
-        private final String id;
         private final int rows;
         private final Map<Integer, MenuItemData> items = new HashMap<>();
 
         public MenuData(String id, int rows) {
-            this.id = id;
             this.rows = rows;
         }
 
