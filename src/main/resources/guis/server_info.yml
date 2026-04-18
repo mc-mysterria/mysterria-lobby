@@ -1,0 +1,80 @@
+title:
+  en: "<gradient:#667eea:#764ba2><bold>📖 Server Guide</bold></gradient>"
+  ua: "<gradient:#667eea:#764ba2><bold>📖 Довідник сервера</bold></gradient>"
+  es: "<gradient:#667eea:#764ba2><bold>📖 Guía del Servidor</bold></gradient>"
+
+rows: 3
+
+fill:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+
+items:
+  rules:
+    slot: 11
+    material: BOOK
+    display_name:
+      en: "<gradient:#ffd700:#ffaa00><bold>📜 Server Rules</bold></gradient>"
+      ua: "<gradient:#ffd700:#ffaa00><bold>📜 Правила сервера</bold></gradient>"
+      es: "<gradient:#ffd700:#ffaa00><bold>📜 Reglas del Servidor</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Read and follow our rules"
+        - ""
+        - "<yellow>➤ Click to view</yellow>"
+      ua:
+        - "<gray>Прочитайте та дотримуйтесь правил"
+        - ""
+        - "<yellow>➤ Натисніть щоб переглянути</yellow>"
+      es:
+        - "<gray>Lee y sigue nuestras reglas"
+        - ""
+        - "<yellow>➤ Clic para ver</yellow>"
+    actions:
+      - "[COMMAND] rules"
+      - "[CLOSE]"
+
+  discord:
+    slot: 13
+    material: SLIME_BALL
+    display_name:
+      en: "<gradient:#5865F2:#7289DA><bold>💬 Discord</bold></gradient>"
+      ua: "<gradient:#5865F2:#7289DA><bold>💬 Discord</bold></gradient>"
+      es: "<gradient:#5865F2:#7289DA><bold>💬 Discord</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Join our community!"
+        - ""
+        - "<gradient:#5865F2:#7289DA>discord.gg/mysterria</gradient>"
+      ua:
+        - "<gray>Приєднуйтесь до спільноти!"
+        - ""
+        - "<gradient:#5865F2:#7289DA>discord.gg/mysterria</gradient>"
+      es:
+        - "<gray>¡Únete a nuestra comunidad!"
+        - ""
+        - "<gradient:#5865F2:#7289DA>discord.gg/mysterria</gradient>"
+    actions: []
+
+  servers:
+    slot: 15
+    material: NETHER_STAR
+    display_name:
+      en: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Server Selector</bold></gradient>"
+      ua: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Вибір Серверів</bold></gradient>"
+      es: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Selector de Servidores</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Browse all game modes"
+        - ""
+        - "<yellow>➤ Click to open</yellow>"
+      ua:
+        - "<gray>Перегляньте всі режими гри"
+        - ""
+        - "<yellow>➤ Натисніть щоб відкрити</yellow>"
+      es:
+        - "<gray>Explora todos los modos de juego"
+        - ""
+        - "<yellow>➤ Clic para abrir</yellow>"
+    actions:
+      - "[MENU] server_selector"

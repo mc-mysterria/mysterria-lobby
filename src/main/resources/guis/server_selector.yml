@@ -1,0 +1,94 @@
+title:
+  en: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Server Selector</bold></gradient>"
+  ua: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Вибір Серверів</bold></gradient>"
+  es: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Selector de Servidores</bold></gradient>"
+
+rows: 3
+
+fill:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+
+items:
+  survival:
+    slot: 11
+    material: GRASS_BLOCK
+    display_name:
+      en: "<gradient:#4CAF50:#2E7D32><bold>🌍 Survival</bold></gradient>"
+      ua: "<gradient:#4CAF50:#2E7D32><bold>🌍 Виживання</bold></gradient>"
+      es: "<gradient:#4CAF50:#2E7D32><bold>🌍 Supervivencia</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Classic survival experience"
+        - ""
+        - "<yellow>➤ Click to join</yellow>"
+      ua:
+        - "<gray>Класичний режим виживання"
+        - ""
+        - "<yellow>➤ Натисніть щоб приєднатись</yellow>"
+      es:
+        - "<gray>Experiencia de supervivencia clásica"
+        - ""
+        - "<yellow>➤ Clic para unirse</yellow>"
+    actions:
+      - "[TELEPORT] survival"
+
+  creative:
+    slot: 13
+    material: CRAFTING_TABLE
+    display_name:
+      en: "<gradient:#2196F3:#1565C0><bold>🎨 Creative</bold></gradient>"
+      ua: "<gradient:#2196F3:#1565C0><bold>🎨 Творчість</bold></gradient>"
+      es: "<gradient:#2196F3:#1565C0><bold>🎨 Creativo</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Build without limits"
+        - ""
+        - "<yellow>➤ Click to join</yellow>"
+      ua:
+        - "<gray>Будуйте без обмежень"
+        - ""
+        - "<yellow>➤ Натисніть щоб приєднатись</yellow>"
+      es:
+        - "<gray>Construye sin límites"
+        - ""
+        - "<yellow>➤ Clic para unirse</yellow>"
+    actions:
+      - "[TELEPORT] creative"
+
+  minigames:
+    slot: 15
+    material: FIREWORK_ROCKET
+    display_name:
+      en: "<gradient:#FF9800:#E65100><bold>🎮 Minigames</bold></gradient>"
+      ua: "<gradient:#FF9800:#E65100><bold>🎮 Міні-ігри</bold></gradient>"
+      es: "<gradient:#FF9800:#E65100><bold>🎮 Minijuegos</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Fun mini-games for everyone"
+        - ""
+        - "<yellow>➤ Click to join</yellow>"
+      ua:
+        - "<gray>Веселі міні-ігри для всіх"
+        - ""
+        - "<yellow>➤ Натисніть щоб приєднатись</yellow>"
+      es:
+        - "<gray>Minijuegos divertidos para todos"
+        - ""
+        - "<yellow>➤ Clic para unirse</yellow>"
+    actions:
+      - "[TELEPORT] minigames"
+
+  back:
+    slot: 22
+    material: ARROW
+    display_name:
+      en: "<gray>← Back"
+      ua: "<gray>← Назад"
+      es: "<gray>← Atrás"
+    lore:
+      en: []
+      ua: []
+      es: []
+    actions:
+      - "[BACK]"

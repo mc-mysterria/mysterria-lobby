@@ -1,0 +1,107 @@
+title:
+  en: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Select Language</bold></gradient>"
+  ua: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Оберіть мову</bold></gradient>"
+  es: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Seleccionar Idioma</bold></gradient>"
+
+rows: 3
+
+fill:
+  enabled: true
+  material: GRAY_STAINED_GLASS_PANE
+
+items:
+  english:
+    slot: 11
+    material: WHITE_BANNER
+    display_name:
+      en: "<gradient:#4CAF50:#388E3C><bold>English</bold></gradient>"
+      ua: "<gradient:#4CAF50:#388E3C><bold>Англійська</bold></gradient>"
+      es: "<gradient:#4CAF50:#388E3C><bold>Inglés</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Switch interface to English"
+        - ""
+        - "<yellow>➤ Click to select</yellow>"
+      ua:
+        - "<gray>Перемкнути інтерфейс на Англійську"
+        - ""
+        - "<yellow>➤ Натисніть щоб обрати</yellow>"
+      es:
+        - "<gray>Cambiar interfaz a Inglés"
+        - ""
+        - "<yellow>➤ Clic para seleccionar</yellow>"
+    actions:
+      - "[COMMAND] lobby setlang en"
+      - "[CLOSE]"
+
+  ukrainian:
+    slot: 13
+    material: YELLOW_BANNER
+    display_name:
+      en: "<gradient:#FFD700:#FFC107><bold>Ukrainian</bold></gradient>"
+      ua: "<gradient:#FFD700:#FFC107><bold>Українська</bold></gradient>"
+      es: "<gradient:#FFD700:#FFC107><bold>Ucraniano</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Switch interface to Ukrainian"
+        - ""
+        - "<yellow>➤ Click to select</yellow>"
+      ua:
+        - "<gray>Перемкнути інтерфейс на Українську"
+        - ""
+        - "<yellow>➤ Натисніть щоб обрати</yellow>"
+      es:
+        - "<gray>Cambiar interfaz a Ucraniano"
+        - ""
+        - "<yellow>➤ Clic para seleccionar</yellow>"
+    actions:
+      - "[COMMAND] lobby setlang ua"
+      - "[CLOSE]"
+
+  spanish:
+    slot: 15
+    material: RED_BANNER
+    display_name:
+      en: "<gradient:#FF5722:#F44336><bold>Spanish</bold></gradient>"
+      ua: "<gradient:#FF5722:#F44336><bold>Іспанська</bold></gradient>"
+      es: "<gradient:#FF5722:#F44336><bold>Español</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Switch interface to Spanish"
+        - ""
+        - "<yellow>➤ Click to select</yellow>"
+      ua:
+        - "<gray>Перемкнути інтерфейс на Іспанську"
+        - ""
+        - "<yellow>➤ Натисніть щоб обрати</yellow>"
+      es:
+        - "<gray>Cambiar interfaz a Español"
+        - ""
+        - "<yellow>➤ Clic para seleccionar</yellow>"
+    actions:
+      - "[COMMAND] lobby setlang es"
+      - "[CLOSE]"
+
+  auto:
+    slot: 22
+    material: COMPASS
+    display_name:
+      en: "<gradient:#9C27B0:#673AB7><bold>🔄 Auto-detect</bold></gradient>"
+      ua: "<gradient:#9C27B0:#673AB7><bold>🔄 Авто-визначення</bold></gradient>"
+      es: "<gradient:#9C27B0:#673AB7><bold>🔄 Auto-detectar</bold></gradient>"
+    lore:
+      en:
+        - "<gray>Use your client's language automatically"
+        - ""
+        - "<yellow>➤ Click to select</yellow>"
+      ua:
+        - "<gray>Автоматично використовувати мову клієнта"
+        - ""
+        - "<yellow>➤ Натисніть щоб обрати</yellow>"
+      es:
+        - "<gray>Usar el idioma del cliente automáticamente"
+        - ""
+        - "<yellow>➤ Clic para seleccionar</yellow>"
+    actions:
+      - "[COMMAND] lobby setlang auto"
+      - "[CLOSE]"

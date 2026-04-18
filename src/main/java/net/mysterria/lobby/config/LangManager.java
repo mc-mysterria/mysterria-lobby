@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -29,53 +30,45 @@ public class LangManager {
 
     public void reload() {
         this.defaultLang = plugin.getConfig().getString("language.default", "en");
-
         availableLanguages.clear();
-        ConfigurationSection joinItems = plugin.getConfig().getConfigurationSection("join.items");
-        if (joinItems != null) {
-            for (String itemKey : joinItems.getKeys(false)) {
-                ConfigurationSection displayName = joinItems.getConfigurationSection(itemKey + ".display_name");
-                if (displayName != null) {
-                    for (String lang : displayName.getKeys(false)) {
-                        availableLanguages.put(lang, true);
+
+        // Prefer explicit list in config — simpler than auto-detection
+        List<String> explicit = plugin.getConfig().getStringList("language.available");
+        if (!explicit.isEmpty()) {
+            for (String lang : explicit) availableLanguages.put(lang, true);
+        } else {
+            // Backward compat: scan join.items and menus for language keys
+            ConfigurationSection joinItems = plugin.getConfig().getConfigurationSection("join.items");
+            if (joinItems != null) {
+                for (String itemKey : joinItems.getKeys(false)) {
+                    ConfigurationSection displayName = joinItems.getConfigurationSection(itemKey + ".display_name");
+                    if (displayName != null) {
+                        for (String lang : displayName.getKeys(false)) availableLanguages.put(lang, true);
+                    }
+                }
+            }
+            ConfigurationSection menus = plugin.getConfig().getConfigurationSection("menus");
+            if (menus != null) {
+                for (String menuKey : menus.getKeys(false)) {
+                    ConfigurationSection title = menus.getConfigurationSection(menuKey + ".title");
+                    if (title != null) {
+                        for (String lang : title.getKeys(false)) availableLanguages.put(lang, true);
                     }
                 }
             }
         }
 
-        ConfigurationSection menus = plugin.getConfig().getConfigurationSection("menus");
-        if (menus != null) {
-            for (String menuKey : menus.getKeys(false)) {
-                ConfigurationSection title = menus.getConfigurationSection(menuKey + ".title");
-                if (title != null) {
-                    for (String lang : title.getKeys(false)) {
-                        availableLanguages.put(lang, true);
-                    }
-                }
-            }
-        }
-
-        if (!availableLanguages.containsKey(defaultLang)) {
-            availableLanguages.put(defaultLang, true);
-        }
+        if (!availableLanguages.containsKey(defaultLang)) availableLanguages.put(defaultLang, true);
     }
 
     public String getPlayerLang(Player player) {
         String tempLang = temporaryLanguageOverrides.get(player.getUniqueId());
-        if (tempLang != null && availableLanguages.containsKey(tempLang)) {
-            return tempLang;
-        }
-        
-        Locale clientLocale = player.locale();
-        String detectedLanguage = mapClientLocaleToLanguage(clientLocale);
-        
-        return detectedLanguage;
+        if (tempLang != null && availableLanguages.containsKey(tempLang)) return tempLang;
+        return mapClientLocaleToLanguage(player.locale());
     }
 
     public void setPlayerLang(Player player, String lang) {
-        if (availableLanguages.containsKey(lang)) {
-            temporaryLanguageOverrides.put(player.getUniqueId(), lang);
-        }
+        if (availableLanguages.containsKey(lang)) temporaryLanguageOverrides.put(player.getUniqueId(), lang);
     }
 
     public void clearPlayerLangOverride(Player player) {
@@ -83,27 +76,20 @@ public class LangManager {
     }
 
     public String getClientLang(Player player) {
-        Locale clientLocale = player.locale();
-        return mapClientLocaleToLanguage(clientLocale);
+        return mapClientLocaleToLanguage(player.locale());
     }
 
     private String mapClientLocaleToLanguage(Locale clientLocale) {
         String language = clientLocale.getLanguage().toLowerCase();
-        String country = clientLocale.getCountry().toLowerCase();
-        String fullLocale = language + "_" + country;
+        String fullLocale = language + "_" + clientLocale.getCountry().toLowerCase();
 
-        if (language.startsWith("uk") || language.startsWith("ua") || fullLocale.startsWith("uk")) {
+        if (language.startsWith("uk") || language.startsWith("ua") || fullLocale.startsWith("uk"))
             return availableLanguages.containsKey("ua") ? "ua" : defaultLang;
-        }
-        
-        if (language.startsWith("es") || fullLocale.startsWith("es")) {
+        if (language.startsWith("es") || fullLocale.startsWith("es"))
             return availableLanguages.containsKey("es") ? "es" : defaultLang;
-        }
-        
-        if (language.startsWith("en") || fullLocale.startsWith("en")) {
+        if (language.startsWith("en") || fullLocale.startsWith("en"))
             return availableLanguages.containsKey("en") ? "en" : defaultLang;
-        }
-        
+
         return defaultLang;
     }
 
@@ -115,61 +101,62 @@ public class LangManager {
         temporaryLanguageOverrides.remove(player.getUniqueId());
     }
 
+    // -- config.yml-backed methods --
+
     public Component getLocalizedComponent(Player player, String path) {
-        String text = getLocalizedString(player, path);
-        return miniMessage.deserialize(text).decoration(TextDecoration.ITALIC, false);
+        return miniMessage.deserialize(getLocalizedString(player, path)).decoration(TextDecoration.ITALIC, false);
     }
 
     public List<Component> getLocalizedComponentList(Player player, String path) {
-        List<String> strings = getLocalizedStringList(player, path);
-        return strings.stream()
+        return getLocalizedStringList(player, path).stream()
                 .map(s -> miniMessage.deserialize(s).decoration(TextDecoration.ITALIC, false))
                 .toList();
     }
 
     public String getLocalizedString(Player player, String path) {
         String lang = getPlayerLang(player);
-        String localizedPath = path + "." + lang;
-
-        String text = plugin.getConfig().getString(localizedPath);
-        if (text == null) {
-            text = plugin.getConfig().getString(path + "." + defaultLang);
-        }
-        if (text == null) {
-            text = "Missing translation: " + path;
-        }
-
+        String text = plugin.getConfig().getString(path + "." + lang);
+        if (text == null) text = plugin.getConfig().getString(path + "." + defaultLang);
+        if (text == null) text = "Missing translation: " + path;
         return text;
     }
 
     public List<String> getLocalizedStringList(Player player, String path) {
         String lang = getPlayerLang(player);
-        String localizedPath = path + "." + lang;
-
-        List<String> texts = plugin.getConfig().getStringList(localizedPath);
-        if (texts.isEmpty()) {
-            texts = plugin.getConfig().getStringList(path + "." + defaultLang);
-        }
-        if (texts.isEmpty()) {
-            texts = List.of("Missing translation: " + path);
-        }
-
+        List<String> texts = plugin.getConfig().getStringList(path + "." + lang);
+        if (texts.isEmpty()) texts = plugin.getConfig().getStringList(path + "." + defaultLang);
         return texts;
     }
 
-    public String getDefaultLang() {
-        return defaultLang;
+    // -- FileConfiguration-backed methods (for per-GUI-file localization) --
+
+    public Component getLocalizedComponent(Player player, FileConfiguration config, String path) {
+        return miniMessage.deserialize(getLocalizedString(player, config, path)).decoration(TextDecoration.ITALIC, false);
     }
 
-    public boolean isLanguageAvailable(String lang) {
-        return availableLanguages.containsKey(lang);
+    public List<Component> getLocalizedComponentList(Player player, FileConfiguration config, String path) {
+        return getLocalizedStringList(player, config, path).stream()
+                .map(s -> miniMessage.deserialize(s).decoration(TextDecoration.ITALIC, false))
+                .toList();
     }
 
-    public java.util.Set<String> getAvailableLanguages() {
-        return availableLanguages.keySet();
+    public String getLocalizedString(Player player, FileConfiguration config, String path) {
+        String lang = getPlayerLang(player);
+        String text = config.getString(path + "." + lang);
+        if (text == null) text = config.getString(path + "." + defaultLang);
+        if (text == null) text = "Missing: " + path;
+        return text;
     }
-    
-    public MiniMessage getMiniMessage() {
-        return miniMessage;
+
+    public List<String> getLocalizedStringList(Player player, FileConfiguration config, String path) {
+        String lang = getPlayerLang(player);
+        List<String> texts = config.getStringList(path + "." + lang);
+        if (texts.isEmpty()) texts = config.getStringList(path + "." + defaultLang);
+        return texts;
     }
+
+    public String getDefaultLang() { return defaultLang; }
+    public boolean isLanguageAvailable(String lang) { return availableLanguages.containsKey(lang); }
+    public java.util.Set<String> getAvailableLanguages() { return availableLanguages.keySet(); }
+    public MiniMessage getMiniMessage() { return miniMessage; }
 }

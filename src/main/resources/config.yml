@@ -6,14 +6,16 @@ general:
   heal_on_join: true
   teleport_to_spawn: true
 
-# Language system - now automatically detects client locale
+# Language system - automatically detects client locale
 language:
-  # Default fallback when client language is not supported
   default: "en"
+  # Explicit list of available languages. If empty, auto-detected from join.items keys.
+  available:
+    - en
+    - ua
+    - es
   # Allow players to manually override their language with /lobby setlang
   allow_manual_selection: true
-  # Note: System automatically uses Player.getLocale() from client
-  # Supported languages: en, ua (Ukrainian), es (Spanish)
 
 # Player visibility toggle system
 player_hider:
@@ -57,8 +59,26 @@ player_hider:
           - ""
           - "<gradient:#ef5350:#e53935>❌ Los jugadores están ocultos</gradient>"
 
-# Join items system
+# Join screen: title and welcome message
 join:
+  title:
+    enabled: true
+    title:
+      en: "<gradient:#667eea:#764ba2><bold>Welcome!</bold></gradient>"
+      ua: "<gradient:#667eea:#764ba2><bold>Ласкаво просимо!</bold></gradient>"
+      es: "<gradient:#667eea:#764ba2><bold>¡Bienvenido!</bold></gradient>"
+    subtitle:
+      en: "<gray>Enjoy your stay on Mysterria</gray>"
+      ua: "<gray>Приємного перебування на Mysterria</gray>"
+      es: "<gray>Disfruta tu estancia en Mysterria</gray>"
+    fade_in: 10
+    stay: 70
+    fade_out: 20
+  message:
+    enabled: true
+    en: "<gradient:#667eea:#764ba2>✦</gradient> <gray>Welcome back, <gradient:#ffd700:#ffaa00>{player}</gradient>!"
+    ua: "<gradient:#667eea:#764ba2>✦</gradient> <gray>З поверненням, <gradient:#ffd700:#ffaa00>{player}</gradient>!"
+    es: "<gradient:#667eea:#764ba2>✦</gradient> <gray>¡Bienvenido de vuelta, <gradient:#ffd700:#ffaa00>{player}</gradient>!"
   items:
     server_info:
       slot: 0
@@ -166,347 +186,6 @@ join:
       actions:
         - "[MESSAGE] messages.coming_soon"
 
-# Menu system configurations
-menus:
-  server_info:
-    title:
-      en: "<gradient:#667eea:#764ba2><bold>📖 Server Information</bold></gradient>"
-      ua: "<gradient:#667eea:#764ba2><bold>📖 Інформація про сервер</bold></gradient>"
-      es: "<gradient:#667eea:#764ba2><bold>📖 Información del Servidor</bold></gradient>"
-    rows: 3
-    items:
-      discord:
-        slot: 9
-        material: PAPER
-        display_name:
-          en: "<gradient:#7289da:#5865f2><bold>💬 Discord Server</bold></gradient>"
-          ua: "<gradient:#7289da:#5865f2><bold>💬 Discord Сервер</bold></gradient>"
-          es: "<gradient:#7289da:#5865f2><bold>💬 Servidor Discord</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Join our community Discord"
-            - "<#7289da>discord.gg/misterria</>"
-            - ""
-            - "<gradient:#00f260:#0575e6>🎮 Chat, events, and support!</gradient>"
-          ua:
-            - "<gray>Приєднуйтесь до нашого Discord"
-            - "<#7289da>discord.gg/misterria</>"
-            - ""
-            - "<gradient:#00f260:#0575e6>🎮 Чат, події та підтримка!</gradient>"
-          es:
-            - "<gray>Únete a nuestro Discord"
-            - "<#7289da>discord.gg/misterria</>"
-            - ""
-            - "<gradient:#00f260:#0575e6>🎮 Chat, eventos y soporte!</gradient>"
-        actions:
-          - "[MESSAGE] messages.discord_link"
-
-      website:
-        slot: 11
-        material: GLOBE_BANNER_PATTERN
-        display_name:
-          en: "<gradient:#ff9a9e:#fecfef><bold>🌐 Official Website</bold></gradient>"
-          ua: "<gradient:#ff9a9e:#fecfef><bold>🌐 Офіційний сайт</bold></gradient>"
-          es: "<gradient:#ff9a9e:#fecfef><bold>🌐 Sitio Web Oficial</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Visit our official website"
-            - "<#ff9a9e>mysterria.net</>"
-            - ""
-            - "<gradient:#a8edea:#fed6e3>📰 News, updates, and store!</gradient>"
-          ua:
-            - "<gray>Відвідайте наш офіційний сайт"
-            - "<#ff9a9e>mysterria.net</>"
-            - ""
-            - "<gradient:#a8edea:#fed6e3>📰 Новини, оновлення та магазин!</gradient>"
-          es:
-            - "<gray>Visita nuestro sitio web oficial"
-            - "<#ff9a9e>mysterria.net</>"
-            - ""
-            - "<gradient:#a8edea:#fed6e3>📰 Noticias, actualizaciones y tienda!</gradient>"
-        actions:
-          - "[MESSAGE] messages.website_link"
-
-      rules:
-        slot: 13
-        material: WRITTEN_BOOK
-        display_name:
-          en: "<gradient:#ffecd2:#fcb69f><bold>📋 Server Rules</bold></gradient>"
-          ua: "<gradient:#ffecd2:#fcb69f><bold>📋 Правила сервера</bold></gradient>"
-          es: "<gradient:#ffecd2:#fcb69f><bold>📋 Reglas del Servidor</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Read our community rules"
-            - ""
-            - "<gradient:#ff6b6b:#ee5a52>⚠️ Important to follow!</gradient>"
-            - "<yellow>➤ Click to view rules</yellow>"
-          ua:
-            - "<gray>Прочитайте правила спільноти"
-            - ""
-            - "<gradient:#ff6b6b:#ee5a52>⚠️ Важливо дотримуватися!</gradient>"
-            - "<yellow>➤ Натисніть, щоб переглянути</yellow>"
-          es:
-            - "<gray>Lee las reglas de la comunidad"
-            - ""
-            - "<gradient:#ff6b6b:#ee5a52>⚠️ Importante seguir!</gradient>"
-            - "<yellow>➤ Haz clic para ver reglas</yellow>"
-        actions:
-          - "[COMMAND] rules"
-          - "[CLOSE]"
-
-      vote:
-        slot: 15
-        material: EMERALD
-        display_name:
-          en: "<gradient:#4caf50:#2e7d32><bold>🗳️ Vote for Server</bold></gradient>"
-          ua: "<gradient:#4caf50:#2e7d32><bold>🗳️ Голосувати за сервер</bold></gradient>"
-          es: "<gradient:#4caf50:#2e7d32><bold>🗳️ Votar por el Servidor</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Support us by voting daily"
-            - ""
-            - "<gradient:#66bb6a:#4caf50>💰 Earn rewards for voting!</gradient>"
-            - "<yellow>➤ Click to get vote links</yellow>"
-          ua:
-            - "<gray>Підтримайте нас щоденним голосуванням"
-            - ""
-            - "<gradient:#66bb6a:#4caf50>💰 Отримуйте нагороди за голосування!</gradient>"
-            - "<yellow>➤ Натисніть для отримання посилань</yellow>"
-          es:
-            - "<gray>Apóyanos votando diariamente"
-            - ""
-            - "<gradient:#66bb6a:#4caf50>💰 Gana recompensas por votar!</gradient>"
-            - "<yellow>➤ Haz clic para obtener enlaces</yellow>"
-        actions:
-          - "[MESSAGE] messages.vote_links"
-
-      back:
-        slot: 22
-        material: ARROW
-        display_name:
-          en: "<gradient:#c471ed:#f64f59><bold>← Back to Lobby</bold></gradient>"
-          ua: "<gradient:#c471ed:#f64f59><bold>← Назад до лобі</bold></gradient>"
-          es: "<gradient:#c471ed:#f64f59><bold>← Volver al Lobby</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Close this menu"
-          ua:
-            - "<gray>Закрити це меню"
-          es:
-            - "<gray>Cerrar este menú"
-        actions:
-          - "[CLOSE]"
-
-  server_selector:
-    title:
-      en: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Server Selector</bold></gradient>"
-      ua: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Вибір серверів</bold></gradient>"
-      es: "<gradient:#ff6b6b:#ee5a52><bold>🌟 Selector de Servidores</bold></gradient>"
-    rows: 3
-    items:
-      survival:
-        slot: 10
-        material: GRASS_BLOCK
-        display_name:
-          en: "<gradient:#4CAF50:#45a049><bold>🌲 Survival</bold></gradient>"
-          ua: "<gradient:#4CAF50:#45a049><bold>🌲 Виживання</bold></gradient>"
-          es: "<gradient:#4CAF50:#45a049><bold>🌲 Supervivencia</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Classic survival experience"
-            - ""
-            - "<gradient:#8bc34a:#689f38>🏠 Build, mine, explore!</gradient>"
-            - "<yellow>➤ Click to join</yellow>"
-          ua:
-            - "<gray>Класичний досвід виживання"
-            - ""
-            - "<gradient:#8bc34a:#689f38>🏠 Будуйте, копайте, досліджуйте!</gradient>"
-            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
-          es:
-            - "<gray>Experiencia de supervivencia clásica"
-            - ""
-            - "<gradient:#8bc34a:#689f38>🏠 ¡Construye, mina, explora!</gradient>"
-            - "<yellow>➤ Haz clic para unirte</yellow>"
-        actions:
-          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
-          - "[TELEPORT] survival"
-          - "[CLOSE]"
-
-      creative:
-        slot: 12
-        material: COMMAND_BLOCK
-        display_name:
-          en: "<gradient:#2196F3:#1976D2><bold>🎨 Creative</bold></gradient>"
-          ua: "<gradient:#2196F3:#1976D2><bold>🎨 Творчість</bold></gradient>"
-          es: "<gradient:#2196F3:#1976D2><bold>🎨 Creativo</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Unlimited building possibilities"
-            - ""
-            - "<gradient:#03A9F4:#0288D1>🚀 Create amazing builds!</gradient>"
-            - "<yellow>➤ Click to join</yellow>"
-          ua:
-            - "<gray>Необмежені можливості будівництва"
-            - ""
-            - "<gradient:#03A9F4:#0288D1>🚀 Створюйте дивовижні споруди!</gradient>"
-            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
-          es:
-            - "<gray>Posibilidades de construcción ilimitadas"
-            - ""
-            - "<gradient:#03A9F4:#0288D1>🚀 ¡Crea construcciones increíbles!</gradient>"
-            - "<yellow>➤ Haz clic para unirte</yellow>"
-        actions:
-          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
-          - "[TELEPORT] creative"
-          - "[CLOSE]"
-
-      minigames:
-        slot: 14
-        material: BOW
-        display_name:
-          en: "<gradient:#FF9800:#F57C00><bold>🎯 Minigames</bold></gradient>"
-          ua: "<gradient:#FF9800:#F57C00><bold>🎯 Міні-ігри</bold></gradient>"
-          es: "<gradient:#FF9800:#F57C00><bold>🎯 Minijuegos</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Fun games and competitions"
-            - ""
-            - "<gradient:#FF5722:#D84315>⚔️ Battle other players!</gradient>"
-            - "<yellow>➤ Click to join</yellow>"
-          ua:
-            - "<gray>Веселі ігри та змагання"
-            - ""
-            - "<gradient:#FF5722:#D84315>⚔️ Битвайся з іншими гравцями!</gradient>"
-            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
-          es:
-            - "<gray>Juegos divertidos y competiciones"
-            - ""
-            - "<gradient:#FF5722:#D84315>⚔️ ¡Batalla contra otros jugadores!</gradient>"
-            - "<yellow>➤ Haz clic para unirte</yellow>"
-        actions:
-          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0"
-          - "[TELEPORT] minigames"
-          - "[CLOSE]"
-
-      skyblock:
-        slot: 16
-        material: END_STONE
-        display_name:
-          en: "<gradient:#9C27B0:#673AB7><bold>🏝️ SkyBlock</bold></gradient>"
-          ua: "<gradient:#9C27B0:#673AB7><bold>🏝️ Небесний блок</bold></gradient>"
-          es: "<gradient:#9C27B0:#673AB7><bold>🏝️ SkyBlock</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Start from nothing, build everything"
-            - ""
-            - "<gradient:#E91E63:#9C27B0>🌟 Challenge yourself!</gradient>"
-            - "<yellow>➤ Click to join</yellow>"
-          ua:
-            - "<gray>Почніть з нічого, побудуйте все"
-            - ""
-            - "<gradient:#E91E63:#9C27B0>🌟 Кинути виклик собі!</gradient>"
-            - "<yellow>➤ Натисніть щоб приєднатися</yellow>"
-          es:
-            - "<gray>Comienza desde cero, construye todo"
-            - ""
-            - "<gradient:#E91E63:#9C27B0>🌟 ¡Desafíate a ti mismo!</gradient>"
-            - "<yellow>➤ Haz clic para unirte</yellow>"
-        actions:
-          - "[SOUND] UI_BUTTON_CLICK 1.0 1.0" 
-          - "[TELEPORT] skyblock"
-          - "[CLOSE]"
-
-      close:
-        slot: 22
-        material: BARRIER
-        display_name:
-          en: "<gradient:#f44336:#d32f2f><bold>✖ Close</bold></gradient>"
-          ua: "<gradient:#f44336:#d32f2f><bold>✖ Закрити</bold></gradient>"
-          es: "<gradient:#f44336:#d32f2f><bold>✖ Cerrar</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Return to lobby"
-          ua:
-            - "<gray>Повернутися до лобі"
-          es:
-            - "<gray>Volver al lobby"
-        actions:
-          - "[SOUND] UI_BUTTON_CLICK 0.8 1.0"
-          - "[CLOSE]"
-
-  language_menu:
-    title:
-      en: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Select Your Language</bold></gradient>"
-      ua: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Оберіть вашу мову</bold></gradient>"
-      es: "<gradient:#a8e6cf:#7fcdcd><bold>🌍 Selecciona tu Idioma</bold></gradient>"
-    rows: 1
-    items:
-      english:
-        slot: 2 
-        material: PLAYER_HEAD
-        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
-        display_name:
-          en: "<gradient:#667eea:#764ba2><bold>🇺🇸 English</bold></gradient>"
-          ua: "<gradient:#667eea:#764ba2><bold>🇺🇸 Англійська</bold></gradient>"
-          es: "<gradient:#667eea:#764ba2><bold>🇺🇸 Inglés</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Switch to English"
-            - "<green>✓ Currently selected</green>"
-          ua:
-            - "<gray>Перемкнути на англійську"
-            - "<yellow>Натисніть для вибору</yellow>"
-          es:
-            - "<gray>Cambiar a inglés"
-            - "<yellow>Haz clic para seleccionar</yellow>"
-        actions:
-          - "[COMMAND] lobby setlang en"
-          - "[CLOSE]"
-
-      ukrainian:
-        slot: 4
-        material: PLAYER_HEAD
-        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
-        display_name:
-          en: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Ukrainian</bold></gradient>"
-          ua: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Українська</bold></gradient>"
-          es: "<gradient:#0057b7:#ffd700><bold>🇺🇦 Ucraniano</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Switch to Ukrainian"
-            - "<yellow>Click to select</yellow>"
-          ua:
-            - "<gray>Перемкнути на українську"
-            - "<green>✓ Обрано зараз</green>"
-          es:
-            - "<gray>Cambiar a ucraniano"
-            - "<yellow>Haz clic para seleccionar</yellow>"
-        actions:
-          - "[COMMAND] lobby setlang ua"
-          - "[CLOSE]"
-
-      spanish:
-        slot: 6
-        material: PLAYER_HEAD
-        texture_url: "28b9f52e36aa5c7caaa1e7f26ea97e28f635e8eac9aef74cec97f465f5a6b51"
-        display_name:
-          en: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Spanish</bold></gradient>"
-          ua: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Іспанська</bold></gradient>"
-          es: "<gradient:#c60b1e:#ffc400><bold>🇪🇸 Español</bold></gradient>"
-        lore:
-          en:
-            - "<gray>Switch to Spanish"
-            - "<yellow>Click to select</yellow>"
-          ua:
-            - "<gray>Перемкнути на іспанську"
-            - "<yellow>Натисніть для вибору</yellow>"
-          es:
-            - "<gray>Cambiar a español"
-            - "<green>✓ Actualmente seleccionado</green>"
-        actions:
-          - "[COMMAND] lobby setlang es"
-          - "[CLOSE]"
-
 # Message system
 messages:
   discord_link:
@@ -590,170 +269,53 @@ teleport:
     ua: "<gradient:#4dd0e1:#26c6da>🌊 Ефект моря <red>вимкнено</red> для зони '<white>%zone%</white>'.</gradient>"
     es: "<gradient:#4dd0e1:#26c6da>🌊 Efecto de mar <red>deshabilitado</red> para la zona '<white>%zone%</white>'.</gradient>"
 
-# Collectible Heads System
-collectible_heads:
+# ─────────────────────────────────────────
+# LOBBY FEATURES
+# ─────────────────────────────────────────
+
+# Boss bar shown to all players in the lobby
+bossbar:
   enabled: false
-  
-  # Discord webhook integration
-  discord:
-    webhook_url: ""  # Discord webhook URL for completion notifications
-    username: "Mysterria Lobby"
-    avatar_url: ""
-    footer_icon_url: ""
-    completion_title: "🎉 Collection Complete!"
-    completion_description: "**%player%** has found all %total% collectible heads in the lobby!\n\n⏰ Completion time: %time%\n🏆 Amazing exploration skills!"
-  
-  # Visual and sound effects
-  effects:
-    collection_sound: "ENTITY_PLAYER_LEVELUP"
-    completion_sound: "UI_TOAST_CHALLENGE_COMPLETE"
-    sound_volume: 1.0
-    sound_pitch: 1.5
-    completion_sound_pitch: 1.0
-    collection_particle: "HAPPY_VILLAGER"
-    particle_count: 10
-    particle_spread: 1.0
+  color: BLUE       # BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+  style: PROGRESS   # PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20
+  progress: 1.0
+  text:
+    en: "<gradient:#667eea:#764ba2>✦ Welcome to Mysterria Network ✦</gradient>"
+    ua: "<gradient:#667eea:#764ba2>✦ Ласкаво просимо до Mysterria Network ✦</gradient>"
+    es: "<gradient:#667eea:#764ba2>✦ Bienvenido a Mysterria Network ✦</gradient>"
 
-  # Localized messages for the collectibles system
+# Rotating action bar messages sent to all online players
+# Supports placeholders: {online}, {max}, {player}
+action_bar:
+  enabled: false
+  switch_interval: 100   # ticks between message switches (100 = 5 s)
   messages:
-    system_disabled:
-      en: "<red>⛔ The collectible heads system is currently disabled.</red>"
-      ua: "<red>⛔ Система колекційних голівок зараз вимкнена.</red>"
-      es: "<red>⛔ El sistema de cabezas coleccionables está actualmente deshabilitado.</red>"
-    
-    collection_title:
-      en: "<gradient:#ffd700:#ff8c00><bold>✨ Head Collected!</bold></gradient>"
-      ua: "<gradient:#ffd700:#ff8c00><bold>✨ Голівку знайдено!</bold></gradient>"
-      es: "<gradient:#ffd700:#ff8c00><bold>✨ ¡Cabeza Recolectada!</bold></gradient>"
-    
-    collection_subtitle:
-      en: "<gray>%collected%/%total% collected</gray>"
-      ua: "<gray>%collected%/%total% знайдено</gray>"
-      es: "<gray>%collected%/%total% recolectadas</gray>"
-    
-    collection_chat:
-      en: "<gradient:#4ecdc4:#45b7aa>🎯 You found the <white>%head_name%</white>! Progress: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
-      ua: "<gradient:#4ecdc4:#45b7aa>🎯 Ви знайшли <white>%head_name%</white>! Прогрес: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
-      es: "<gradient:#4ecdc4:#45b7aa>🎯 ¡Encontraste <white>%head_name%</white>! Progreso: <yellow>%collected%/%total%</yellow> (<green>%percentage%%</green>)</gradient>"
-    
-    already_collected:
-      en: "<gradient:#ff9800:#f57c00>🔄 You already collected <white>%head_name%</white>! Progress: <yellow>%collected%/%total%</yellow></gradient>"
-      ua: "<gradient:#ff9800:#f57c00>🔄 Ви вже знайшли <white>%head_name%</white>! Прогрес: <yellow>%collected%/%total%</yellow></gradient>"
-      es: "<gradient:#ff9800:#f57c00>🔄 ¡Ya recolectaste <white>%head_name%</white>! Progreso: <yellow>%collected%/%total%</yellow></gradient>"
-    
-    completion_title:
-      en: "<gradient:#00ff00:#32cd32><bold>🎉 COLLECTION COMPLETE!</bold></gradient>"
-      ua: "<gradient:#00ff00:#32cd32><bold>🎉 КОЛЕКЦІЮ ЗАВЕРШЕНО!</bold></gradient>"
-      es: "<gradient:#00ff00:#32cd32><bold>🎉 ¡COLECCIÓN COMPLETA!</bold></gradient>"
-    
-    completion_subtitle:
-      en: "<gradient:#ffd700:#ffb347>All %total% heads found! 🏆</gradient>"
-      ua: "<gradient:#ffd700:#ffb347>Всі %total% голівок знайдено! 🏆</gradient>"
-      es: "<gradient:#ffd700:#ffb347>¡Las %total% cabezas encontradas! 🏆</gradient>"
-    
-    completion_chat:
-      en: "<gradient:#00ff00:#32cd32><bold>🎊 CONGRATULATIONS! 🎊</bold></gradient>\n<white>You have found all <yellow>%total%</yellow> collectible heads in the lobby!</white>\n<gradient:#ffd700:#ff8c00>🏆 You are a true explorer! The Discord community has been notified of your achievement!</gradient>"
-      ua: "<gradient:#00ff00:#32cd32><bold>🎊 ВІТАЄМО! 🎊</bold></gradient>\n<white>Ви знайшли всі <yellow>%total%</yellow> колекційних голівок у лобі!</white>\n<gradient:#ffd700:#ff8c00>🏆 Ви справжній дослідник! Discord спільнота була сповіщена про ваше досягнення!</gradient>"
-      es: "<gradient:#00ff00:#32cd32><bold>🎊 ¡FELICITACIONES! 🎊</bold></gradient>\n<white>¡Has encontrado todas las <yellow>%total%</yellow> cabezas coleccionables en el lobby!</white>\n<gradient:#ffd700:#ff8c00>🏆 ¡Eres un verdadero explorador! ¡La comunidad de Discord ha sido notificada de tu logro!</gradient>"
-    
-    progress_info:
-      en: "<gradient:#667eea:#764ba2><bold>📊 Your Collection Progress</bold></gradient>\n<white>Collected: <green>%collected%</green>/<yellow>%total%</yellow> heads (<green>%percentage%%</green> complete)</white>"
-      ua: "<gradient:#667eea:#764ba2><bold>📊 Ваш прогрес колекції</bold></gradient>\n<white>Зібрано: <green>%collected%</green>/<yellow>%total%</yellow> голівок (<green>%percentage%%</green> завершено)</white>"
-      es: "<gradient:#667eea:#764ba2><bold>📊 Tu Progreso de Colección</bold></gradient>\n<white>Recolectadas: <green>%collected%</green>/<yellow>%total%</yellow> cabezas (<green>%percentage%%</green> completado)</white>"
-    
-    collected_list_header:
-      en: "<gradient:#4ecdc4:#45b7aa><bold>📋 Collected Heads:</bold></gradient>"
-      ua: "<gradient:#4ecdc4:#45b7aa><bold>📋 Зібрані голівки:</bold></gradient>"
-      es: "<gradient:#4ecdc4:#45b7aa><bold>📋 Cabezas Recolectadas:</bold></gradient>"
-    
-    collected_list_item:
-      en: "<green>  ✓</green> <white>%head_name%</white>"
-      ua: "<green>  ✓</green> <white>%head_name%</white>"
-      es: "<green>  ✓</green> <white>%head_name%</white>"
-    
-    system_reloaded:
-      en: "<gradient:#4caf50:#45a049>✅ Collectible heads system reloaded! Loaded <yellow>%count%</yellow> heads.</gradient>"
-      ua: "<gradient:#4caf50:#45a049>✅ Система колекційних голівок перезавантажена! Завантажено <yellow>%count%</yellow> голівок.</gradient>"
-      es: "<gradient:#4caf50:#45a049>✅ ¡Sistema de cabezas coleccionables recargado! Cargadas <yellow>%count%</yellow> cabezas.</gradient>"
-    
-    all_heads_header:
-      en: "<gradient:#9c27b0:#673ab7><bold>🗂️ All Collectible Heads (%total% total):</bold></gradient>"
-      ua: "<gradient:#9c27b0:#673ab7><bold>🗂️ Всі колекційні голівки (всього %total%):</bold></gradient>"
-      es: "<gradient:#9c27b0:#673ab7><bold>🗂️ Todas las Cabezas Coleccionables (%total% total):</bold></gradient>"
-    
-    head_list_item:
-      en: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
-      ua: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
-      es: "<yellow>  •</yellow> <white>%head_id%</white> (<gray>%head_name%</gray>) - <blue>%location%</blue>"
-    
-    player_not_found:
-      en: "<red>❌ Player '%player%' not found.</red>"
-      ua: "<red>❌ Гравця '%player%' не знайдено.</red>"
-      es: "<red>❌ Jugador '%player%' no encontrado.</red>"
-    
-    other_progress_info:
-      en: "<gradient:#667eea:#764ba2><bold>📊 %player%'s Collection Progress</bold></gradient>\n<white>Collected: <green>%collected%</green>/<yellow>%total%</yellow> heads (<green>%percentage%%</green> complete)</white>"
-      ua: "<gradient:#667eea:#764ba2><bold>📊 Прогрес колекції гравця %player%</bold></gradient>\n<white>Зібрано: <green>%collected%</green>/<yellow>%total%</yellow> голівок (<green>%percentage%%</green> завершено)</white>"
-      es: "<gradient:#667eea:#764ba2><bold>📊 Progreso de Colección de %player%</bold></gradient>\n<white>Recolectadas: <green>%collected%</green>/<yellow>%total%</yellow> cabezas (<green>%percentage%%</green> completado)</white>"
-    
-    progress_reset:
-      en: "<gradient:#f44336:#d32f2f>🗑️ Collectible heads progress for <white>%player%</white> has been reset.</gradient>"
-      ua: "<gradient:#f44336:#d32f2f>🗑️ Прогрес колекційних голівок для <white>%player%</white> був скинутий.</gradient>"
-      es: "<gradient:#f44336:#d32f2f>🗑️ El progreso de cabezas coleccionables para <white>%player%</white> ha sido reiniciado.</gradient>"
-    
-    your_progress_reset:
-      en: "<gradient:#f44336:#d32f2f>🗑️ Your collectible heads progress has been reset by an administrator.</gradient>"
-      ua: "<gradient:#f44336:#d32f2f>🗑️ Ваш прогрес колекційних голівок був скинутий адміністратором.</gradient>"
-      es: "<gradient:#f44336:#d32f2f>🗑️ Tu progreso de cabezas coleccionables ha sido reiniciado por un administrador.</gradient>"
-    
-    head_placed:
-      en: "<gradient:#4caf50:#45a049>✅ Collectible head '<white>%head_id%</white>' (%head_name%) placed at <yellow>%x%, %y%, %z%</yellow>!</gradient>"
-      ua: "<gradient:#4caf50:#45a049>✅ Колекційна голівка '<white>%head_id%</white>' (%head_name%) розміщена на <yellow>%x%, %y%, %z%</yellow>!</gradient>"
-      es: "<gradient:#4caf50:#45a049>✅ ¡Cabeza coleccionable '<white>%head_id%</white>' (%head_name%) colocada en <yellow>%x%, %y%, %z%</yellow>!</gradient>"
-    
-    head_already_exists:
-      en: "<red>❌ A collectible head with ID '<white>%head_id%</white>' already exists!</red>"
-      ua: "<red>❌ Колекційна голівка з ID '<white>%head_id%</white>' вже існує!</red>"
-      es: "<red>❌ ¡Ya existe una cabeza coleccionable con ID '<white>%head_id%</white>'!</red>"
-    
-    head_removed:
-      en: "<gradient:#f44336:#d32f2f>🗑️ Collectible head '<white>%head_id%</white>' has been removed.</gradient>"
-      ua: "<gradient:#f44336:#d32f2f>🗑️ Колекційна голівка '<white>%head_id%</white>' була видалена.</gradient>"
-      es: "<gradient:#f44336:#d32f2f>🗑️ La cabeza coleccionable '<white>%head_id%</white>' ha sido eliminada.</gradient>"
-    
-    head_not_found:
-      en: "<red>❌ No collectible head found with ID '<white>%head_id%</white>'.</red>"
-      ua: "<red>❌ Не знайдено колекційної голівки з ID '<white>%head_id%</white>'.</red>"
-      es: "<red>❌ No se encontró cabeza coleccionable con ID '<white>%head_id%</white>'.</red>"
-    
-    no_heads_in_world:
-      en: "<yellow>⚠️ No collectible heads found in your current world.</yellow>"
-      ua: "<yellow>⚠️ Не знайдено колекційних голівок у вашому поточному світі.</yellow>"
-      es: "<yellow>⚠️ No se encontraron cabezas coleccionables en tu mundo actual.</yellow>"
-    
-    nearest_head:
-      en: "<gradient:#2196f3:#1976d2>🧭 Nearest head: <white>%head_id%</white> (%head_name%) - <yellow>%distance% blocks</yellow> away at <blue>%x%, %y%, %z%</blue></gradient>"
-      ua: "<gradient:#2196f3:#1976d2>🧭 Найближча голівка: <white>%head_id%</white> (%head_name%) - <yellow>%distance% блоків</yellow> від вас на <blue>%x%, %y%, %z%</blue></gradient>"
-      es: "<gradient:#2196f3:#1976d2>🧭 Cabeza más cercana: <white>%head_id%</white> (%head_name%) - <yellow>%distance% bloques</yellow> de distancia en <blue>%x%, %y%, %z%</blue></gradient>"
+    1:
+      en: "<gradient:#ffd700:#ffaa00>✦ {online} players online ✦</gradient>"
+      ua: "<gradient:#ffd700:#ffaa00>✦ {online} гравців онлайн ✦</gradient>"
+      es: "<gradient:#ffd700:#ffaa00>✦ {online} jugadores en línea ✦</gradient>"
+    2:
+      en: "<gray>Join our Discord: <gradient:#667eea:#764ba2>discord.gg/mysterria</gradient>"
+      ua: "<gray>Discord: <gradient:#667eea:#764ba2>discord.gg/mysterria</gradient>"
+      es: "<gray>Discord: <gradient:#667eea:#764ba2>discord.gg/mysterria</gradient>"
 
-  # Localized names for collectible head types
-  head_names:
-    ancient_relic:
-      en: "Ancient Relic"
-      ua: "Стародавня Реліквія"
-      es: "Reliquia Antigua"
-    
-    crystal_skull:
-      en: "Crystal Skull"
-      ua: "Кристаловий Череп"
-      es: "Cráneo de Cristal"
-    
-    golden_mask:
-      en: "Golden Mask"
-      ua: "Золота Маска"
-      es: "Máscara Dorada"
-    
-    mysterious_orb:
-      en: "Mysterious Orb"
-      ua: "Містичний Шарик"
-      es: "Orbe Misterioso"
+# Periodic broadcast messages sent to all players in chat
+announcements:
+  enabled: false
+  interval: 180   # seconds between announcements
+  messages:
+    1:
+      en: "<gradient:#667eea:#764ba2>💬 Join our Discord community! discord.gg/mysterria</gradient>"
+      ua: "<gradient:#667eea:#764ba2>💬 Приєднуйтесь до Discord! discord.gg/mysterria</gradient>"
+      es: "<gradient:#667eea:#764ba2>💬 ¡Únete a Discord! discord.gg/mysterria</gradient>"
+    2:
+      en: "<gradient:#ffd700:#ffaa00>🌟 Explore all game modes with the Server Selector!</gradient>"
+      ua: "<gradient:#ffd700:#ffaa00>🌟 Досліджуйте режими через Вибір Серверів!</gradient>"
+      es: "<gradient:#ffd700:#ffaa00>🌟 ¡Explora todos los modos con el Selector de Servidores!</gradient>"
+
+# Double jump — players can jump again mid-air
+double_jump:
+  enabled: false
+  strength: 1.0          # vertical launch power (1.0 = normal jump height)
+  cooldown: 3.0          # seconds before the double jump recharges
+  sound: ENTITY_FIREWORK_ROCKET_LAUNCH

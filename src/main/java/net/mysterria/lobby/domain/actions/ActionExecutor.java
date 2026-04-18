@@ -13,10 +13,7 @@ public class ActionExecutor {
 
     public static void executeActions(Player player, List<String> actions) {
         if (actions == null || actions.isEmpty()) return;
-
-        for (String action : actions) {
-            executeAction(player, action);
-        }
+        for (String action : actions) executeAction(player, action);
     }
 
     public static void executeAction(Player player, String action) {
@@ -28,15 +25,16 @@ public class ActionExecutor {
             openMenu(player, action.substring(7));
         } else if (action.startsWith("[MESSAGE] ")) {
             sendMessage(player, action.substring(10));
-        } else if (action.startsWith("[CLOSE]")) {
+        } else if (action.equals("[CLOSE]")) {
             player.closeInventory();
+        } else if (action.equals("[BACK]")) {
+            MysterriaLobby.getInstance().getGuiManager().goBack(player);
         } else if (action.startsWith("[CONSOLE] ")) {
             executeConsoleCommand(player, action.substring(10));
         } else if (action.equals("[TOGGLE_VISIBILITY]")) {
             MysterriaLobby.getInstance().getPlayerVisibilityManager().togglePlayerVisibility(player);
         } else if (action.startsWith("[TELEPORT] ")) {
-            String serverName = action.substring(11);
-            MysterriaLobby.getInstance().getTeleportManager().teleportToServer(player, serverName);
+            MysterriaLobby.getInstance().getTeleportManager().teleportToServer(player, action.substring(11));
         } else if (action.equals("[SERVER_SELECTOR]")) {
             openMenu(player, "server_selector");
         } else if (action.startsWith("[SOUND] ")) {
@@ -45,23 +43,19 @@ public class ActionExecutor {
     }
 
     private static void executeCommand(Player player, String command) {
-        if (command.startsWith("/")) {
-            command = command.substring(1);
-        }
+        if (command.startsWith("/")) command = command.substring(1);
         player.performCommand(command);
     }
 
     private static void executeConsoleCommand(Player player, String command) {
         command = command.replace("{player}", player.getName());
         MysterriaLobby.getInstance().getServer().dispatchCommand(
-                MysterriaLobby.getInstance().getServer().getConsoleSender(),
-                command
-        );
+                MysterriaLobby.getInstance().getServer().getConsoleSender(), command);
     }
 
     private static void openMenu(Player player, String menuId) {
-        if (MysterriaLobby.getInstance().getTriumphMenuManager().hasMenu(menuId)) {
-            MysterriaLobby.getInstance().getTriumphMenuManager().openMenu(player, menuId);
+        if (MysterriaLobby.getInstance().getGuiManager().hasMenu(menuId)) {
+            MysterriaLobby.getInstance().getGuiManager().openMenu(player, menuId);
         }
     }
 
