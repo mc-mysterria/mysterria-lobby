@@ -3,7 +3,7 @@ version: '${version}'
 description: '${description}'
 main: net.mysterria.lobby.MysterriaLobby
 api-version: '1.21'
-author: Mysterria
+author: ikeepcalm
 website: https://mysterria.net
 
 permissions:
