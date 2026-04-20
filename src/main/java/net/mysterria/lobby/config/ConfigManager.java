@@ -31,4 +31,8 @@ public class ConfigManager {
     public boolean isManualLanguageSelectionAllowed() {
         return plugin.getConfig().getBoolean("language.allow_manual_selection", true);
     }
+
+    public boolean isAllowFlight() {
+        return plugin.getConfig().getBoolean("general.allow_flight", false);
+    }
 }

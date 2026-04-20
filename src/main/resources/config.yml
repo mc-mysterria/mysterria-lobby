@@ -5,6 +5,7 @@ general:
   firework_on_join: true
   heal_on_join: true
   teleport_to_spawn: true
+  allow_flight: false
 
 # Language system - automatically detects client locale
 language:

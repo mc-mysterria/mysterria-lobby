@@ -39,6 +39,10 @@ public class JoinListener implements Listener {
 
         player.getInventory().clear();
         plugin.getJoinItemManager().giveJoinItems(player);
+
+        if (plugin.getConfigManager().isAllowFlight()) {
+            player.setAllowFlight(true);
+        }
         plugin.getPlayerVisibilityManager().onPlayerJoin(player);
 
         if (plugin.getConfigManager().isFireworkOnJoin()) {
@@ -64,6 +68,10 @@ public class JoinListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if (plugin.getConfigManager().isAllowFlight()) {
+            player.setAllowFlight(false);
+            player.setFlying(false);
+        }
         plugin.getPlayerVisibilityManager().onPlayerQuit(player);
         plugin.getTeleportManager().onPlayerQuit(player);
         plugin.getLangManager().onPlayerQuit(player);
