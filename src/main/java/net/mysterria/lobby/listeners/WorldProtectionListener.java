@@ -68,11 +68,14 @@ public class WorldProtectionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerPickupItem(PlayerPickupItemEvent event) {
+    public void onPlayerPickupItem(EntityPickupItemEvent event) {
         if (!protection.isPreventItemPickup()) return;
 
-        Player player = event.getPlayer();
-        if (!protection.hasBypassPermission(player, "item_pickup")) {
+        if (event.getEntity() instanceof Player player) {
+            if (!protection.hasBypassPermission(player, "item_pickup")) {
+                event.setCancelled(true);
+            }
+        } else {
             event.setCancelled(true);
         }
     }
