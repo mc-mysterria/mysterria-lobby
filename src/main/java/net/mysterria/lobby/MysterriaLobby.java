@@ -18,6 +18,7 @@ import net.mysterria.lobby.feature.bossbar.BossBarManager;
 import net.mysterria.lobby.feature.doublejump.DoubleJumpManager;
 import net.mysterria.lobby.gui.GuiManager;
 import net.mysterria.lobby.listeners.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class MysterriaLobby extends JavaPlugin {
@@ -39,7 +40,7 @@ public final class MysterriaLobby extends JavaPlugin {
     private BossBarManager bossBarManager;
     private DoubleJumpManager doubleJumpManager;
 
-    private LiteCommands<org.bukkit.command.CommandSender> liteCommands;
+    private LiteCommands<CommandSender> liteCommands;
 
     @Override
     public void onEnable() {
