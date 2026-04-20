@@ -13,11 +13,6 @@ public class SkullUtil {
 
     private static final String TEXTURE_URL_PREFIX = "http://textures.minecraft.net/texture/";
 
-    /**
-     * Creates a player head with a custom texture from a texture URL or ID
-     * @param textureUrlOrId Full URL like "http://textures.minecraft.net/texture/28b9f52e..." or just the ID like "28b9f52e..."
-     * @return ItemStack with the custom texture
-     */
     public static ItemStack createCustomHead(String textureUrlOrId) {
         if (textureUrlOrId == null || textureUrlOrId.isEmpty()) {
             return new ItemStack(Material.PLAYER_HEAD);
