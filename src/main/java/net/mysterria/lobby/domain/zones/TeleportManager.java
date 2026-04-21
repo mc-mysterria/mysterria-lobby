@@ -30,6 +30,7 @@ public class TeleportManager {
     private final Map<UUID, String> playerZones = new ConcurrentHashMap<>();
     private final Map<String, BukkitTask> seaEffectTasks = new ConcurrentHashMap<>();
     private final Set<String> zonesWithSeaEffect = new HashSet<>();
+    private final Set<UUID> bypassPlayers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private File configFile;
     private FileConfiguration config;
@@ -184,7 +185,13 @@ public class TeleportManager {
 
         if (newZone != null && !newZone.getId().equals(currentZone)) {
             playerZones.put(player.getUniqueId(), newZone.getId());
-            startTeleportCountdown(player, newZone);
+            if (bypassPlayers.contains(player.getUniqueId())) {
+                player.sendMessage(miniMessage.deserialize(
+                    "<yellow>[Debug] Entered zone <white>" + newZone.getId() + "</white> → <aqua>" +
+                    newZone.getServerName() + "</aqua> <gray>(" + newZone.getDelay() + "s delay)</gray>"));
+            } else {
+                startTeleportCountdown(player, newZone);
+            }
         } else if (newZone == null && currentZone != null) {
             playerZones.remove(player.getUniqueId());
         }
@@ -281,6 +288,20 @@ public class TeleportManager {
     public void onPlayerQuit(Player player) {
         cancelTeleport(player);
         playerZones.remove(player.getUniqueId());
+        bypassPlayers.remove(player.getUniqueId());
+    }
+
+    public boolean toggleBypass(UUID playerUuid) {
+        if (bypassPlayers.contains(playerUuid)) {
+            bypassPlayers.remove(playerUuid);
+            return false;
+        }
+        bypassPlayers.add(playerUuid);
+        return true;
+    }
+
+    public boolean isBypassing(UUID playerUuid) {
+        return bypassPlayers.contains(playerUuid);
     }
 
     public Collection<TeleportZone> getZones() {

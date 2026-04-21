@@ -16,7 +16,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Command(name = "teleportzone", aliases = {"tpzone", "zone"})
@@ -26,6 +28,8 @@ public class ZonesCommand {
     private final MysterriaLobby plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<UUID, Location> firstPositions = new HashMap<>();
+    private final Set<UUID> debugPlayers = new HashSet<>();
+    private final Map<UUID, BukkitRunnable> debugTasks = new HashMap<>();
 
     public ZonesCommand(MysterriaLobby plugin) {
         this.plugin = plugin;
@@ -189,6 +193,50 @@ public class ZonesCommand {
         }
     }
 
+    @Execute(name = "debug")
+    @Description("Toggle persistent per-player zone boundary visualization")
+    public void debug(@Context Player player) {
+        UUID uuid = player.getUniqueId();
+        if (debugPlayers.contains(uuid)) {
+            debugPlayers.remove(uuid);
+            BukkitRunnable task = debugTasks.remove(uuid);
+            if (task != null) task.cancel();
+            player.sendMessage(miniMessage.deserialize("<yellow>🔍 Zone debug visualization <red>disabled</red>."));
+        } else {
+            debugPlayers.add(uuid);
+            BukkitRunnable task = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    if (!player.isOnline() || !debugPlayers.contains(uuid)) {
+                        cancel();
+                        debugTasks.remove(uuid);
+                        debugPlayers.remove(uuid);
+                        return;
+                    }
+                    for (TeleportZone zone : plugin.getTeleportManager().getZones()) {
+                        if (zone.getWorld().equals(player.getWorld())) {
+                            drawZoneBoundary(zone, false, player);
+                        }
+                    }
+                }
+            };
+            task.runTaskTimer(plugin, 0L, 4L);
+            debugTasks.put(uuid, task);
+            player.sendMessage(miniMessage.deserialize("<green>🔍 Zone debug visualization <green>enabled</green>. Run <yellow>/tpzone debug</yellow> again to disable."));
+        }
+    }
+
+    @Execute(name = "bypass")
+    @Description("Toggle teleport bypass — enter zones without being teleported (for setup)")
+    public void bypass(@Context Player player) {
+        boolean isBypassing = plugin.getTeleportManager().toggleBypass(player.getUniqueId());
+        if (isBypassing) {
+            player.sendMessage(miniMessage.deserialize("<yellow>⚠️ Teleport bypass <green>enabled</green>. Entering zones will show info but not teleport you."));
+        } else {
+            player.sendMessage(miniMessage.deserialize("<yellow>⚠️ Teleport bypass <red>disabled</red>. Zones will teleport normally."));
+        }
+    }
+
     private void showZoneBoundaries(Player player, TeleportZone zone, int duration) {
         new BukkitRunnable() {
             int ticks = 0;
@@ -196,18 +244,18 @@ public class ZonesCommand {
 
             @Override
             public void run() {
-                if (ticks >= maxTicks) {
+                if (ticks >= maxTicks || !player.isOnline()) {
                     cancel();
                     return;
                 }
 
-                drawZoneBoundary(zone, false);
-                ticks += 4; // Run every 4 ticks (5 times per second)
+                drawZoneBoundary(zone, false, player);
+                ticks += 4;
             }
         }.runTaskTimer(plugin, 0L, 4L);
     }
 
-    private void drawZoneBoundary(TeleportZone zone, boolean waveEffect) {
+    private void drawZoneBoundary(TeleportZone zone, boolean waveEffect, Player recipient) {
         double minX = zone.getMinX();
         double minY = zone.getMinY();
         double minZ = zone.getMinZ();
@@ -218,46 +266,76 @@ public class ZonesCommand {
         double step = 0.5;
         long currentTime = System.currentTimeMillis();
 
-        drawLine(zone.getWorld(), minX, minY, minZ, maxX, minY, minZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), minX, minY, minZ, minX, minY, maxZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), maxX, minY, minZ, maxX, minY, maxZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), minX, minY, maxZ, maxX, minY, maxZ, step, waveEffect, currentTime);
+        // Bottom face
+        drawLine(zone.getWorld(), recipient, minX, minY, minZ, maxX, minY, minZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, minX, minY, minZ, minX, minY, maxZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, maxX, minY, minZ, maxX, minY, maxZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, minX, minY, maxZ, maxX, minY, maxZ, step, waveEffect, currentTime);
 
-        drawLine(zone.getWorld(), minX, maxY, minZ, maxX, maxY, minZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), minX, maxY, minZ, minX, maxY, maxZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), maxX, maxY, minZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), minX, maxY, maxZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
+        // Top face
+        drawLine(zone.getWorld(), recipient, minX, maxY, minZ, maxX, maxY, minZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, minX, maxY, minZ, minX, maxY, maxZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, maxX, maxY, minZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, minX, maxY, maxZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
 
-        drawLine(zone.getWorld(), minX, minY, minZ, minX, maxY, minZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), maxX, minY, minZ, maxX, maxY, minZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), minX, minY, maxZ, minX, maxY, maxZ, step, waveEffect, currentTime);
-        drawLine(zone.getWorld(), maxX, minY, maxZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
+        // Vertical edges
+        drawLine(zone.getWorld(), recipient, minX, minY, minZ, minX, maxY, minZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, maxX, minY, minZ, maxX, maxY, minZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, minX, minY, maxZ, minX, maxY, maxZ, step, waveEffect, currentTime);
+        drawLine(zone.getWorld(), recipient, maxX, minY, maxZ, maxX, maxY, maxZ, step, waveEffect, currentTime);
     }
 
-    private void drawLine(org.bukkit.World world, double x1, double y1, double z1, double x2, double y2, double z2, double step, boolean waveEffect, long currentTime) {
-        double distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2) + Math.pow(z2 - z1, 2));
+    private void drawLine(org.bukkit.World world, Player recipient, double x1, double y1, double z1, double x2, double y2, double z2, double step, boolean waveEffect, long currentTime) {
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double dz = z2 - z1;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (distance == 0) return;
+
+        // Vertical edge when Y span dominates — wave should offset X, not Y
+        boolean isVertical = Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > Math.abs(dz);
         int points = (int) (distance / step);
 
         for (int i = 0; i <= points; i++) {
             double ratio = (double) i / points;
-            double x = x1 + (x2 - x1) * ratio;
-            double y = y1 + (y2 - y1) * ratio;
-            double z = z1 + (z2 - z1) * ratio;
+            double x = x1 + dx * ratio;
+            double y = y1 + dy * ratio;
+            double z = z1 + dz * ratio;
 
             if (waveEffect) {
-                double wave = Math.sin((currentTime / 500.0) + (x + z) * 0.5) * 0.3;
-                y += wave;
+                double wave = Math.sin((currentTime / 500.0) + ratio * Math.PI * 4) * 0.3;
+                if (isVertical) {
+                    x += wave;
+                } else {
+                    y += wave;
+                }
 
                 Particle.DustOptions dustOptions = new Particle.DustOptions(Color.AQUA, 1.2f);
-                world.spawnParticle(Particle.DUST, x, y, z, 1, 0.1, 0.1, 0.1, 0, dustOptions);
-                world.spawnParticle(Particle.BUBBLE_POP, x, y - 0.2, z, 1, 0.1, 0.1, 0.1, 0);
+                spawnParticle(world, recipient, Particle.DUST, x, y, z, 1, 0.1, 0.1, 0.1, 0, dustOptions);
+                spawnParticle(world, recipient, Particle.BUBBLE_POP, x, y - 0.2, z, 1, 0.1, 0.1, 0.1, 0);
                 if (Math.random() < 0.1) {
-                    world.spawnParticle(Particle.DOLPHIN, x, y, z, 1, 0.2, 0.2, 0.2, 0);
+                    spawnParticle(world, recipient, Particle.DOLPHIN, x, y, z, 1, 0.2, 0.2, 0.2, 0);
                 }
             } else {
-                world.spawnParticle(Particle.END_ROD, x, y, z, 1, 0, 0, 0, 0);
-                world.spawnParticle(Particle.ELECTRIC_SPARK, x, y, z, 1, 0.1, 0.1, 0.1, 0);
+                spawnParticle(world, recipient, Particle.END_ROD, x, y, z, 1, 0, 0, 0, 0);
+                spawnParticle(world, recipient, Particle.ELECTRIC_SPARK, x, y, z, 1, 0.1, 0.1, 0.1, 0);
             }
+        }
+    }
+
+    private void spawnParticle(org.bukkit.World world, Player recipient, Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed) {
+        if (recipient != null) {
+            recipient.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed);
+        } else {
+            world.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed);
+        }
+    }
+
+    private <T> void spawnParticle(org.bukkit.World world, Player recipient, Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double speed, T data) {
+        if (recipient != null) {
+            recipient.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data);
+        } else {
+            world.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data);
         }
     }
 }
