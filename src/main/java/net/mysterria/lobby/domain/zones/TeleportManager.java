@@ -108,9 +108,6 @@ public class TeleportManager {
 
                 zones.put(zoneId, teleportZone);
 
-                zonesWithSeaEffect.add(zoneId);
-                startSeaEffect(zoneId);
-
             } catch (Exception e) {
                 plugin.getLogger().severe("Failed to load teleport zone '" + zoneId + "': " + e.getMessage());
             }
@@ -138,9 +135,6 @@ public class TeleportManager {
                 delay, permission);
 
         zones.put(id, zone);
-
-        zonesWithSeaEffect.add(id);
-        startSeaEffect(id);
 
         ConfigurationSection zoneSection = config.createSection("zones." + id);
         zoneSection.set("server", serverName);
@@ -366,7 +360,7 @@ public class TeleportManager {
         long currentTime = System.currentTimeMillis();
 
         double baseStepSize = 1.2; // Base distance between particle points
-        int particlesPerTick = (int) ((maxX - minX) * (maxZ - minZ) / 6); // Adaptive particle count
+        int particlesPerTick = Math.min((int) ((maxX - minX) * (maxZ - minZ) / 6), 200);
 
         double seaSurfaceY = (minY + maxY) / 2.0;
 

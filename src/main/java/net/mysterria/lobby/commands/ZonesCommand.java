@@ -263,7 +263,7 @@ public class ZonesCommand {
         double maxY = zone.getMaxY();
         double maxZ = zone.getMaxZ();
 
-        double step = 0.5;
+        double step = Math.max(0.5, (maxX - minX + maxY - minY + maxZ - minZ) / 300.0);
         long currentTime = System.currentTimeMillis();
 
         // Bottom face
