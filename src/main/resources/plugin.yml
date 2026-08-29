@@ -5,6 +5,10 @@ main: net.mysterria.lobby.MysterriaLobby
 api-version: '1.21'
 author: ikeepcalm
 website: https://mysterria.net
+depend:
+  - CircleOfImagination
+softdepend:
+  - MysterriaLogging
 
 permissions:
   mysterria.lobby.reload:

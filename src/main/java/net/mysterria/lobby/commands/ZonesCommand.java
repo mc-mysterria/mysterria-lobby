@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.permission.Permission;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.mysterria.lobby.domain.zones.TeleportZone;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -84,8 +85,13 @@ public class ZonesCommand {
         }
 
         try {
-            plugin.getTeleportManager().createZone(id, serverName, pos1, pos2, delay, permission);
+            if (!plugin.getTeleportManager().createZone(id, serverName, pos1, pos2, delay, permission)) {
+                player.sendMessage(miniMessage.deserialize("<red>❌ Failed to save teleport zone '<yellow>" + id + "</yellow>'!</red>"));
+                return;
+            }
             firstPositions.remove(player.getUniqueId());
+            MysterriaAuditEmitter.emitZoneAdmin(plugin, "created", UUID.randomUUID(), id,
+                    player.getUniqueId(), zoneMetadata(plugin.getTeleportManager().getZone(id)));
 
             player.sendMessage(miniMessage.deserialize("<gradient:#00d4ff:#0099cc>🎉 Teleport zone '<white>" + id + "</white>' created successfully!</gradient>"));
             player.sendMessage(miniMessage.deserialize("<gray>→ Server: <yellow>" + serverName + "</yellow></gray>"));
@@ -107,7 +113,10 @@ public class ZonesCommand {
             return;
         }
 
+        TeleportZone zone = plugin.getTeleportManager().getZone(id);
         if (plugin.getTeleportManager().deleteZone(id)) {
+            MysterriaAuditEmitter.emitZoneAdmin(plugin, "deleted", UUID.randomUUID(), id,
+                    player.getUniqueId(), zoneMetadata(zone));
             player.sendMessage(miniMessage.deserialize("<gradient:#ff6b6b:#ee5a52>🗑️ Teleport zone '<white>" + id + "</white>' deleted successfully!</gradient>"));
         } else {
             player.sendMessage(miniMessage.deserialize("<red>❌ Failed to delete teleport zone '<yellow>" + id + "</yellow>'!</red>"));
@@ -337,5 +346,22 @@ public class ZonesCommand {
         } else {
             world.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data);
         }
+    }
+
+    private Map<String, Object> zoneMetadata(TeleportZone zone) {
+        if (zone == null) return Map.of();
+        Map<String, Object> metadata = new java.util.LinkedHashMap<>();
+        metadata.put("zone_id", zone.getId());
+        metadata.put("server", zone.getServerName());
+        metadata.put("world", zone.getWorld().getName());
+        metadata.put("min_x", zone.getMinX());
+        metadata.put("min_y", zone.getMinY());
+        metadata.put("min_z", zone.getMinZ());
+        metadata.put("max_x", zone.getMaxX());
+        metadata.put("max_y", zone.getMaxY());
+        metadata.put("max_z", zone.getMaxZ());
+        metadata.put("delay_seconds", zone.getDelay());
+        metadata.put("permission", zone.getPermission());
+        return metadata;
     }
 }

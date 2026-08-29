@@ -1,5 +1,6 @@
 package net.mysterria.lobby.domain.player;
 
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
 import net.mysterria.lobby.util.ItemBuilder;
@@ -76,7 +77,11 @@ public class PlayerVisibilityManager {
     }
     
     public void setPlayersVisible(Player player, boolean visible) {
+        boolean previous = arePlayersVisible(player);
         player.getPersistentDataContainer().set(visibilityKey, PersistentDataType.BOOLEAN, visible);
+        if (previous != visible) {
+            MysterriaAuditEmitter.emitPreferenceChanged(plugin, UUID.randomUUID(), player.getUniqueId(), previous, visible);
+        }
         updatePlayerVisibility(player);
         updateVisibilityItem(player);
         
