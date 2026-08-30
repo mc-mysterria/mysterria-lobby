@@ -2,13 +2,14 @@ package net.mysterria.lobby.domain.zones;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import dev.ua.ikeepcalm.coi.api.audit.AuditOutcome;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import net.mysterria.lobby.MysterriaLobby;
 import net.mysterria.lobby.audit.MysterriaAuditEmitter;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter.Outcome;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -19,6 +20,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -120,12 +124,30 @@ public class TeleportManager {
     }
 
     public boolean saveZones() {
+        File temporaryFile = null;
         try {
-            config.save(configFile);
+            temporaryFile = File.createTempFile("teleport-zones-", ".yml", configFile.getParentFile());
+            config.save(temporaryFile);
+            try {
+                Files.move(temporaryFile.toPath(), configFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporaryFile.toPath(), configFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
             return true;
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save teleport zones: " + e.getMessage());
             return false;
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile.toPath());
+                } catch (IOException cleanupFailure) {
+                    plugin.getLogger().fine("Failed to remove temporary teleport zone file: "
+                            + cleanupFailure.getMessage());
+                }
+            }
         }
     }
 
@@ -139,31 +161,76 @@ public class TeleportManager {
                 pos2.getX(), pos2.getY(), pos2.getZ(),
                 delay, permission);
 
-        zones.put(id, zone);
+        String configSnapshot = config.saveToString();
+        if (zones.putIfAbsent(id, zone) != null) {
+            return false;
+        }
 
-        ConfigurationSection zoneSection = config.createSection("zones." + id);
-        zoneSection.set("server", serverName);
-        zoneSection.set("world", pos1.getWorld().getName());
+        try {
+            config.set("zones." + id, null);
+            writeZoneConfig(zone);
+            if (saveZones()) {
+                return true;
+            }
+        } catch (RuntimeException failure) {
+            zones.remove(id, zone);
+            restoreConfig(configSnapshot);
+            throw failure;
+        }
+
+        zones.remove(id, zone);
+        restoreConfig(configSnapshot);
+        return false;
+    }
+
+    public boolean deleteZone(String id) {
+        TeleportZone zone = zones.get(id);
+        if (zone != null) {
+            String configSnapshot = config.saveToString();
+            if (!zones.remove(id, zone)) {
+                return false;
+            }
+            try {
+                config.set("zones." + id, null);
+                if (saveZones()) {
+                    return true;
+                }
+            } catch (RuntimeException failure) {
+                zones.put(id, zone);
+                restoreConfig(configSnapshot);
+                throw failure;
+            }
+
+            zones.put(id, zone);
+            restoreConfig(configSnapshot);
+        }
+        return false;
+    }
+
+    private void writeZoneConfig(TeleportZone zone) {
+        ConfigurationSection zoneSection = config.createSection("zones." + zone.getId());
+        zoneSection.set("server", zone.getServerName());
+        zoneSection.set("world", zone.getWorld().getName());
         zoneSection.set("region.min.x", zone.getMinX());
         zoneSection.set("region.min.y", zone.getMinY());
         zoneSection.set("region.min.z", zone.getMinZ());
         zoneSection.set("region.max.x", zone.getMaxX());
         zoneSection.set("region.max.y", zone.getMaxY());
         zoneSection.set("region.max.z", zone.getMaxZ());
-        zoneSection.set("delay", delay);
-        if (!permission.isEmpty()) {
-            zoneSection.set("permission", permission);
+        zoneSection.set("delay", zone.getDelay());
+        if (!zone.getPermission().isEmpty()) {
+            zoneSection.set("permission", zone.getPermission());
         }
-
-        return saveZones();
     }
 
-    public boolean deleteZone(String id) {
-        if (zones.remove(id) != null) {
-            config.set("zones." + id, null);
-            return saveZones();
+    private void restoreConfig(String serializedConfig) {
+        YamlConfiguration restored = new YamlConfiguration();
+        try {
+            restored.loadFromString(serializedConfig);
+            config = restored;
+        } catch (InvalidConfigurationException failure) {
+            throw new IllegalStateException("Failed to restore teleport zone configuration", failure);
         }
-        return false;
     }
 
     public void checkPlayerZone(Player player) {
@@ -204,12 +271,6 @@ public class TeleportManager {
         cancelTeleport(player);
 
         TransferContext context = TransferContext.create(zone.getId(), zone.getServerName());
-        transferContexts.put(player.getUniqueId(), context);
-        MysterriaAuditEmitter.emitTransfer(plugin, "requested", AuditOutcome.ATTEMPTED,
-                context.correlationId(), context.businessId(), player.getUniqueId(), null,
-                Map.of("source", "zone", "zone_id", zone.getId(), "server", zone.getServerName(),
-                        "delay_seconds", zone.getDelay()));
-
         PotionEffect slowFall = new PotionEffect(PotionEffectType.SLOW_FALLING, (zone.getDelay() + 5) * 20, 0, false, false);
         PotionEffect nausea = new PotionEffect(PotionEffectType.NAUSEA, (zone.getDelay() + 5) * 20, 0, false, false);
         player.addPotionEffect(slowFall);
@@ -226,10 +287,13 @@ public class TeleportManager {
             public void run() {
 
                 if (countdown <= 0) {
-                    teleportToServer(player, zone.getServerName(), context);
-                    teleportTasks.remove(player.getUniqueId()); // Clean up task reference
-                    transferContexts.remove(player.getUniqueId(), context);
-                    cancel();
+                    try {
+                        teleportToServer(player, zone.getServerName(), context);
+                    } finally {
+                        teleportTasks.remove(player.getUniqueId());
+                        transferContexts.remove(player.getUniqueId(), context);
+                        cancel();
+                    }
                     return;
                 }
 
@@ -239,6 +303,11 @@ public class TeleportManager {
         }.runTaskTimer(plugin, 0L, 20L);
 
         teleportTasks.put(player.getUniqueId(), task);
+        transferContexts.put(player.getUniqueId(), context);
+        MysterriaAuditEmitter.emitTransfer(plugin, "requested", Outcome.ATTEMPTED,
+                context.correlationId(), context.businessId(), player.getUniqueId(), null,
+                Map.of("source", "zone", "zone_id", zone.getId(), "server", zone.getServerName(),
+                        "delay_seconds", zone.getDelay()));
     }
 
     private void showCountdownEffects(Player player, int countdown, String serverName) {
@@ -259,7 +328,7 @@ public class TeleportManager {
 
     public void teleportToServer(Player player, String serverName) {
         TransferContext context = TransferContext.create(null, serverName);
-        MysterriaAuditEmitter.emitTransfer(plugin, "requested", AuditOutcome.ATTEMPTED,
+        MysterriaAuditEmitter.emitTransfer(plugin, "requested", Outcome.ATTEMPTED,
                 context.correlationId(), context.businessId(), player.getUniqueId(), null,
                 Map.of("source", "manual", "server", serverName));
         teleportToServer(player, serverName, context);
@@ -282,11 +351,20 @@ public class TeleportManager {
         out.writeUTF("Connect");
         out.writeUTF(serverName);
 
-        player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-        MysterriaAuditEmitter.emitTransfer(plugin, "dispatched", AuditOutcome.OBSERVED,
-                context.correlationId(), context.businessId(), player.getUniqueId(), null,
-                Map.of("source", context.source(), "server", serverName,
-                        "observed_via", "bungeecord_connect_dispatch"));
+        try {
+            player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+            MysterriaAuditEmitter.emitTransfer(plugin, "dispatched", Outcome.OBSERVED,
+                    context.correlationId(), context.businessId(), player.getUniqueId(), null,
+                    Map.of("source", context.source(), "server", serverName,
+                            "observed_via", "bungeecord_connect_dispatch"));
+        } catch (RuntimeException failure) {
+            MysterriaAuditEmitter.emitTransfer(plugin, "dispatched", Outcome.FAILED,
+                    context.correlationId(), context.businessId(), player.getUniqueId(),
+                    "bungeecord_dispatch_failed",
+                    Map.of("source", context.source(), "server", serverName,
+                            "failure_type", failure.getClass().getSimpleName()));
+            throw failure;
+        }
     }
 
     public void cancelTeleport(Player player) {
@@ -296,7 +374,7 @@ public class TeleportManager {
             task.cancel();
         }
         if (context != null) {
-            MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", AuditOutcome.CANCELLED,
+            MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", Outcome.CANCELLED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), "teleport_task_cancelled",
                     Map.of("source", context.source(), "server", context.serverName(),
                             "zone_id", context.zoneId() == null ? "" : context.zoneId()));
@@ -315,7 +393,7 @@ public class TeleportManager {
                 if (task != null) task.cancel();
                 TransferContext context = transferContexts.remove(playerId);
                 if (context != null) {
-                    MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", AuditOutcome.CANCELLED,
+                    MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", Outcome.CANCELLED,
                             context.correlationId(), context.businessId(), playerId,
                             "teleport_task_cancelled",
                             Map.of("source", context.source(), "server", context.serverName(),

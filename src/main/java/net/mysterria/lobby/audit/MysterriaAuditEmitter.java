@@ -1,10 +1,5 @@
 package net.mysterria.lobby.audit;
 
-import dev.ua.ikeepcalm.coi.api.audit.AuditEmission;
-import dev.ua.ikeepcalm.coi.api.audit.AuditOutcome;
-import dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy;
-import dev.ua.ikeepcalm.coi.api.audit.AuditRisk;
-import dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -23,14 +18,22 @@ public final class MysterriaAuditEmitter {
     private MysterriaAuditEmitter() {
     }
 
+    public enum Outcome {
+        ATTEMPTED,
+        OBSERVED,
+        COMMITTED,
+        FAILED,
+        CANCELLED
+    }
+
     /**
      * Emits without waiting for persistence. Missing or failing audit providers
      * never change lobby behavior or gate the authoritative mutation.
      */
-    public static void emit(JavaPlugin plugin, String event, AuditOutcome outcome,
-                            AuditRisk risk, UUID correlationId, String businessId,
-                            UUID actorId, UUID subjectId, UUID targetId, String reason,
-                            AuditPrivacy privacy, Map<String, ?> values) {
+    private static void emit(JavaPlugin plugin, String event, Outcome outcome,
+                             Risk risk, UUID correlationId, String businessId,
+                             UUID actorId, UUID subjectId, UUID targetId, String reason,
+                             Privacy privacy, Map<String, ?> values) {
         if (event == null || event.isBlank() || outcome == null || risk == null
                 || correlationId == null || businessId == null || businessId.isBlank()
                 || privacy == null) {
@@ -38,24 +41,8 @@ public final class MysterriaAuditEmitter {
         }
 
         try {
-            RegisteredServiceProvider<MysterriaAudit> registration =
-                    Bukkit.getServicesManager().getRegistration(MysterriaAudit.class);
-            MysterriaAudit audit = registration == null ? null : registration.getProvider();
-            if (audit == null) return;
-
-            Map<String, Object> metadata = boundedMetadata(values);
-            audit.emit(new AuditEmission(
-                    NAMESPACE + event,
-                    outcome,
-                    risk,
-                    privacy,
-                    correlationId,
-                    businessId,
-                    actorId,
-                    subjectId,
-                    targetId,
-                    reason,
-                    metadata));
+            ApiBridge.emit(event, outcome, risk, correlationId, businessId,
+                    actorId, subjectId, targetId, reason, privacy, boundedMetadata(values));
         } catch (RuntimeException | LinkageError failure) {
             if (plugin != null) {
                 plugin.getLogger().log(Level.FINE, "Mysterria audit emission was unavailable", failure);
@@ -63,26 +50,66 @@ public final class MysterriaAuditEmitter {
         }
     }
 
-    public static void emitTransfer(JavaPlugin plugin, String event, AuditOutcome outcome,
+    public static void emitTransfer(JavaPlugin plugin, String event, Outcome outcome,
                                     UUID correlationId, String businessId, UUID playerId,
                                     String reason, Map<String, ?> values) {
-        emit(plugin, "transfer." + event, outcome, AuditRisk.NORMAL, correlationId,
-                businessId, playerId, playerId, null, reason, AuditPrivacy.STAFF_RESTRICTED, values);
+        emit(plugin, "transfer." + event, outcome, Risk.NORMAL, correlationId,
+                businessId, playerId, playerId, null, reason, Privacy.STAFF_RESTRICTED, values);
     }
 
     public static void emitPreferenceChanged(JavaPlugin plugin, UUID correlationId,
                                              UUID playerId, boolean previous, boolean value) {
-        emit(plugin, "visibility.preference_changed", AuditOutcome.COMMITTED, AuditRisk.LOW,
+        emit(plugin, "visibility.preference_changed", Outcome.COMMITTED, Risk.LOW,
                 correlationId, "visibility:" + playerId, playerId, playerId, null, null,
-                AuditPrivacy.STAFF_RESTRICTED,
+                Privacy.STAFF_RESTRICTED,
                 Map.of("preference", "players_visible", "previous", previous, "value", value));
     }
 
     public static void emitZoneAdmin(JavaPlugin plugin, String event, UUID correlationId,
                                      String zoneId, UUID actorId, Map<String, ?> values) {
-        emit(plugin, "zone." + event, AuditOutcome.COMMITTED, AuditRisk.NORMAL,
+        emit(plugin, "zone." + event, Outcome.COMMITTED, Risk.NORMAL,
                 correlationId, "zone:" + safe(zoneId), actorId, null, null, null,
-                AuditPrivacy.STAFF_RESTRICTED, values);
+                Privacy.STAFF_RESTRICTED, values);
+    }
+
+    private enum Risk {
+        LOW,
+        NORMAL
+    }
+
+    private enum Privacy {
+        STAFF_RESTRICTED
+    }
+
+    /** Keeps every optional COI type out of the outer class's linkage surface. */
+    private static final class ApiBridge {
+        private ApiBridge() {
+        }
+
+        private static void emit(String event, Outcome outcome, Risk risk,
+                                 UUID correlationId, String businessId, UUID actorId,
+                                 UUID subjectId, UUID targetId, String reason,
+                                 Privacy privacy, Map<String, Object> metadata) {
+            RegisteredServiceProvider<dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit> registration =
+                    Bukkit.getServicesManager().getRegistration(
+                            dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit.class);
+            dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit audit =
+                    registration == null ? null : registration.getProvider();
+            if (audit == null) return;
+
+            audit.emit(new dev.ua.ikeepcalm.coi.api.audit.AuditEmission(
+                    NAMESPACE + event,
+                    dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.valueOf(outcome.name()),
+                    dev.ua.ikeepcalm.coi.api.audit.AuditRisk.valueOf(risk.name()),
+                    dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy.valueOf(privacy.name()),
+                    correlationId,
+                    businessId,
+                    actorId,
+                    subjectId,
+                    targetId,
+                    reason,
+                    metadata));
+        }
     }
 
     private static Map<String, Object> boundedMetadata(Map<String, ?> values) {

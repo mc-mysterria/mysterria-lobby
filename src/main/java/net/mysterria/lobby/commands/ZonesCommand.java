@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 
 @Command(name = "teleportzone", aliases = {"tpzone", "zone"})
 @Permission("mysterria.lobby.teleport")
@@ -90,8 +91,8 @@ public class ZonesCommand {
                 return;
             }
             firstPositions.remove(player.getUniqueId());
-            MysterriaAuditEmitter.emitZoneAdmin(plugin, "created", UUID.randomUUID(), id,
-                    player.getUniqueId(), zoneMetadata(plugin.getTeleportManager().getZone(id)));
+            emitZoneAdmin("created", id, player.getUniqueId(),
+                    plugin.getTeleportManager().getZone(id));
 
             player.sendMessage(miniMessage.deserialize("<gradient:#00d4ff:#0099cc>🎉 Teleport zone '<white>" + id + "</white>' created successfully!</gradient>"));
             player.sendMessage(miniMessage.deserialize("<gray>→ Server: <yellow>" + serverName + "</yellow></gray>"));
@@ -115,8 +116,7 @@ public class ZonesCommand {
 
         TeleportZone zone = plugin.getTeleportManager().getZone(id);
         if (plugin.getTeleportManager().deleteZone(id)) {
-            MysterriaAuditEmitter.emitZoneAdmin(plugin, "deleted", UUID.randomUUID(), id,
-                    player.getUniqueId(), zoneMetadata(zone));
+            emitZoneAdmin("deleted", id, player.getUniqueId(), zone);
             player.sendMessage(miniMessage.deserialize("<gradient:#ff6b6b:#ee5a52>🗑️ Teleport zone '<white>" + id + "</white>' deleted successfully!</gradient>"));
         } else {
             player.sendMessage(miniMessage.deserialize("<red>❌ Failed to delete teleport zone '<yellow>" + id + "</yellow>'!</red>"));
@@ -353,7 +353,7 @@ public class ZonesCommand {
         Map<String, Object> metadata = new java.util.LinkedHashMap<>();
         metadata.put("zone_id", zone.getId());
         metadata.put("server", zone.getServerName());
-        metadata.put("world", zone.getWorld().getName());
+        metadata.put("world", zone.getWorld() == null ? "unknown" : zone.getWorld().getName());
         metadata.put("min_x", zone.getMinX());
         metadata.put("min_y", zone.getMinY());
         metadata.put("min_z", zone.getMinZ());
@@ -363,5 +363,14 @@ public class ZonesCommand {
         metadata.put("delay_seconds", zone.getDelay());
         metadata.put("permission", zone.getPermission());
         return metadata;
+    }
+
+    private void emitZoneAdmin(String event, String zoneId, UUID actorId, TeleportZone zone) {
+        try {
+            MysterriaAuditEmitter.emitZoneAdmin(plugin, event, UUID.randomUUID(), zoneId,
+                    actorId, zoneMetadata(zone));
+        } catch (RuntimeException | LinkageError failure) {
+            plugin.getLogger().log(Level.FINE, "Mysterria zone audit metadata was unavailable", failure);
+        }
     }
 }
