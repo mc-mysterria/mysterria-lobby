@@ -1,5 +1,16 @@
 # MysterriaLobby - Usage Guide
 
+## Build
+
+`./gradlew build` resolves the COI API snapshot from the Mysterria Nexus repository.
+To compile against an unpublished local API build, pass its absolute path with `coiApiJar`:
+
+```bash
+./gradlew build -PcoiApiJar=/absolute/path/to/api-1.4.8-SNAPSHOT.jar
+```
+
+The COI API remains a `compileOnly` dependency and is not included in the plugin jar.
+
 ## 🎯 **Features Implemented**
 
 ### ✅ **Core Features**

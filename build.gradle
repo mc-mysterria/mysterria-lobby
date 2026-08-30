@@ -27,6 +27,9 @@ repositories {
 
     maven {
         url = 'https://nexus.mysterria.net/repository/plugin-public/'
+        content {
+            includeGroup('dev.ua.ikeepcalm')
+        }
     }
 }
 

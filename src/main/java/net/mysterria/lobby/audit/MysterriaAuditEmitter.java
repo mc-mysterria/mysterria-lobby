@@ -99,9 +99,9 @@ public final class MysterriaAuditEmitter {
 
             audit.emit(new dev.ua.ikeepcalm.coi.api.audit.AuditEmission(
                     NAMESPACE + event,
-                    dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.valueOf(outcome.name()),
-                    dev.ua.ikeepcalm.coi.api.audit.AuditRisk.valueOf(risk.name()),
-                    dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy.valueOf(privacy.name()),
+                    mapOutcome(outcome),
+                    mapRisk(risk),
+                    mapPrivacy(privacy),
                     correlationId,
                     businessId,
                     actorId,
@@ -109,6 +109,30 @@ public final class MysterriaAuditEmitter {
                     targetId,
                     reason,
                     metadata));
+        }
+
+        private static dev.ua.ikeepcalm.coi.api.audit.AuditOutcome mapOutcome(Outcome outcome) {
+            return switch (outcome) {
+                case ATTEMPTED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.ATTEMPTED;
+                case OBSERVED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.OBSERVED;
+                case COMMITTED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.COMMITTED;
+                case FAILED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.FAILED;
+                case CANCELLED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.CANCELLED;
+            };
+        }
+
+        private static dev.ua.ikeepcalm.coi.api.audit.AuditRisk mapRisk(Risk risk) {
+            return switch (risk) {
+                case LOW -> dev.ua.ikeepcalm.coi.api.audit.AuditRisk.LOW;
+                case NORMAL -> dev.ua.ikeepcalm.coi.api.audit.AuditRisk.NORMAL;
+            };
+        }
+
+        private static dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy mapPrivacy(Privacy privacy) {
+            return switch (privacy) {
+                case STAFF_RESTRICTED ->
+                        dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy.STAFF_RESTRICTED;
+            };
         }
     }
 
