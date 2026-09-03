@@ -1,5 +1,7 @@
 package net.mysterria.lobby;
 
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
+
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
 import net.mysterria.lobby.commands.LobbyCommands;
@@ -44,6 +46,7 @@ public final class MysterriaLobby extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        MysterriaAuditEmitter.initialize(this);
         instance = this;
         saveDefaultConfig();
 
@@ -70,6 +73,7 @@ public final class MysterriaLobby extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        MysterriaAuditEmitter.close();
         if (liteCommands != null) liteCommands.unregister();
         if (teleportManager != null) teleportManager.cancelAllTeleports();
         if (actionBarManager != null) actionBarManager.stop();

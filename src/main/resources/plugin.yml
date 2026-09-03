@@ -5,10 +5,6 @@ main: net.mysterria.lobby.MysterriaLobby
 api-version: '1.21'
 author: ikeepcalm
 website: https://mysterria.net
-softdepend:
-  - CircleOfImagination
-  - MysterriaLogging
-
 permissions:
   mysterria.lobby.reload:
     description: Allows reloading lobby configuration

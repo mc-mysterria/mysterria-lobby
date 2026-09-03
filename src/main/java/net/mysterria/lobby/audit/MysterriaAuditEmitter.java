@@ -1,7 +1,9 @@
 package net.mysterria.lobby.audit;
 
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.RegisteredServiceProvider;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditPrivacy;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditProducer;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditRisk;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.LinkedHashMap;
@@ -14,8 +16,20 @@ public final class MysterriaAuditEmitter {
     private static final String NAMESPACE = "mysterria-lobby.";
     private static final int MAX_METADATA_ENTRIES = 32;
     private static final int MAX_TEXT = 256;
+    private static AuditProducer producer;
 
     private MysterriaAuditEmitter() {
+    }
+
+    public static void initialize(JavaPlugin plugin) {
+        producer = AuditProducer.create(plugin.getDataFolder().toPath().toAbsolutePath().getParent(),
+                "mysterria-lobby", plugin.getPluginMeta().getVersion());
+    }
+
+    public static void close() {
+        AuditProducer current = producer;
+        producer = null;
+        if (current != null) current.close();
     }
 
     public enum Outcome {
@@ -90,48 +104,34 @@ public final class MysterriaAuditEmitter {
                                  UUID correlationId, String businessId, UUID actorId,
                                  UUID subjectId, UUID targetId, String reason,
                                  Privacy privacy, Map<String, Object> metadata) {
-            RegisteredServiceProvider<dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit> registration =
-                    Bukkit.getServicesManager().getRegistration(
-                            dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit.class);
-            dev.ua.ikeepcalm.coi.api.audit.MysterriaAudit audit =
-                    registration == null ? null : registration.getProvider();
-            if (audit == null) return;
-
-            audit.emit(new dev.ua.ikeepcalm.coi.api.audit.AuditEmission(
-                    NAMESPACE + event,
-                    mapOutcome(outcome),
-                    mapRisk(risk),
-                    mapPrivacy(privacy),
-                    correlationId,
-                    businessId,
-                    actorId,
-                    subjectId,
-                    targetId,
-                    reason,
-                    metadata));
+            AuditProducer current = producer;
+            if (current == null) return;
+            current.emit(NAMESPACE + event, mapOutcome(outcome), mapRisk(risk),
+                    mapPrivacy(privacy), correlationId, businessId, actorId, subjectId,
+                    targetId, reason, metadata);
         }
 
-        private static dev.ua.ikeepcalm.coi.api.audit.AuditOutcome mapOutcome(Outcome outcome) {
+        private static AuditOutcome mapOutcome(Outcome outcome) {
             return switch (outcome) {
-                case ATTEMPTED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.ATTEMPTED;
-                case OBSERVED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.OBSERVED;
-                case COMMITTED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.COMMITTED;
-                case FAILED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.FAILED;
-                case CANCELLED -> dev.ua.ikeepcalm.coi.api.audit.AuditOutcome.CANCELLED;
+                case ATTEMPTED -> AuditOutcome.ATTEMPTED;
+                case OBSERVED -> AuditOutcome.OBSERVED;
+                case COMMITTED -> AuditOutcome.COMMITTED;
+                case FAILED -> AuditOutcome.FAILED;
+                case CANCELLED -> AuditOutcome.CANCELLED;
             };
         }
 
-        private static dev.ua.ikeepcalm.coi.api.audit.AuditRisk mapRisk(Risk risk) {
+        private static AuditRisk mapRisk(Risk risk) {
             return switch (risk) {
-                case LOW -> dev.ua.ikeepcalm.coi.api.audit.AuditRisk.LOW;
-                case NORMAL -> dev.ua.ikeepcalm.coi.api.audit.AuditRisk.NORMAL;
+                case LOW -> AuditRisk.LOW;
+                case NORMAL -> AuditRisk.NORMAL;
             };
         }
 
-        private static dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy mapPrivacy(Privacy privacy) {
+        private static AuditPrivacy mapPrivacy(Privacy privacy) {
             return switch (privacy) {
                 case STAFF_RESTRICTED ->
-                        dev.ua.ikeepcalm.coi.api.audit.AuditPrivacy.STAFF_RESTRICTED;
+                        AuditPrivacy.STAFF_RESTRICTED;
             };
         }
     }
