@@ -41,7 +41,7 @@ public final class MysterriaAuditEmitter {
     }
 
     /**
-     * Emits without waiting for persistence. Missing or failing audit providers
+     * Emits without waiting for persistence. Missing or failing audit infrastructure
      * never change lobby behavior or gate the authoritative mutation.
      */
     private static void emit(JavaPlugin plugin, String event, Outcome outcome,
