@@ -1,10 +1,8 @@
 # MysterriaLobby audit events
 
-MysterriaLobby emits best-effort, non-blocking events through the optional
-`MysterriaAudit` Bukkit service. The lobby continues to run normally when the
-service is absent or rejects an emission. Events are emitted only after the
-authoritative state change is complete (or after the BungeeCord dispatch is
-observable).
+MysterriaLobby emits best-effort events through its shaded neutral audit client. Events distinguish transfer attempts, local state changes, and observable BungeeCord dispatch; dispatch does not prove arrival on another server.
+
+The optional per-server audit engine owns SQLite and local staff searches. Each producer writes to its own bounded spool directory even when the engine is absent. Existing gameplay dependencies remain separate from audit transport.
 
 ## Event catalog
 
