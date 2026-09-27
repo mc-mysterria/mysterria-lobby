@@ -55,6 +55,10 @@ shadowJar {
     relocate 'dev.ua.ikeepcalm.mysterria.audit', 'net.mysterria.lobby.libs.audit'
 }
 
+jar {
+    enabled = false
+}
+
 build {
     dependsOn shadowJar
 }
