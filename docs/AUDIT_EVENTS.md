@@ -8,13 +8,13 @@ The optional per-server audit engine owns SQLite and local staff searches. Each 
 
 | Event type | Outcome | Commit/observation point | Identifiers |
 | --- | --- | --- | --- |
-| `mysterria-lobby.transfer.requested` | `ATTEMPTED` | A zone countdown is scheduled or an explicit server transfer is dispatched | `business_id=transfer:<correlation UUID>`, actor/subject are the player |
-| `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the `mysterria:transfer` message was handed to the player connection; when `false`, `forward_skipped` is `channel_not_registered` (the connection has not registered the channel) or `send_failed` |
+| `mysterria-lobby.transfer.requested` | `ATTEMPTED` | A zone countdown is scheduled or an explicit server transfer is dispatched | `business_id=transfer:<correlation UUID>`, actor/subject are the player; all `requested` and `dispatched` rows carry the player's block location as `world`, `x`, `y`, `z` (`cancelled` rows for players who already went offline omit them) |
+| `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the correlation payload was handed to the player connection on at least one route; `forward_routes` is a comma-separated list of `bungeecord_forward` (proxy `Forward` to the destination server) and `direct_channel` (direct `mysterria:transfer` message, only when the connection registered that channel) |
 | `mysterria-lobby.transfer.cancelled` | `CANCELLED` | A scheduled countdown task is cancelled (reload, quit, or explicit cancellation) | Same correlation and business ID as the request |
 | `mysterria-lobby.visibility.preference_changed` | `COMMITTED` | Player visibility preference is written to the persistent data container | `business_id=visibility:<player UUID>`, actor/subject are the player |
 | `mysterria-lobby.zone.created` | `COMMITTED` | Zone is registered and `teleport-zones.yml` is saved | `business_id=zone:<zone ID>`, actor is the staff player |
 | `mysterria-lobby.zone.deleted` | `COMMITTED` | Zone is removed and `teleport-zones.yml` is saved | Same stable zone business ID, actor is the staff player |
-| `mysterria-lobby.zone.updated` | `COMMITTED` | `/lobby reload` re-read `teleport-zones.yml` and a zone definition was added, removed, or modified compared to the previous in-memory set (one row per changed zone, none when nothing changed) | Same stable zone business ID; actor is the staff player who ran the reload (absent for console); all rows from one reload share a correlation UUID; metadata adds `source=reload`, `change` (`added`/`removed`/`modified`) and, for `modified`, `changed_fields` |
+| `mysterria-lobby.zone.updated` | `COMMITTED` | `/lobby reload` re-read `teleport-zones.yml` and a zone definition was added, removed, or modified compared to the previous in-memory set (one row per changed zone, none when nothing changed) | Same stable zone business ID; actor is the staff player who ran the reload (absent for console); all rows from one reload share a correlation UUID; metadata adds `source=reload`, `change` (`added`/`removed`/`modified`) and, for `modified`, `changed_fields`. `/tpzone togglesea` also emits `zone.updated` after flipping the runtime sea boundary display (not persisted), with a fresh correlation UUID, actor the staff player, `source=togglesea`, `change=sea_effect_toggled`, `changed_fields=sea_effect` and `sea_effect` (new state) |
 | `mysterria-lobby.staff.bypass_toggled` | `COMMITTED` | `/tpzone bypass` flipped the in-memory teleport-zone bypass flag (not persisted; cleared on quit without a row) | `business_id=bypass:<player UUID>`, actor/subject are the staff player; metadata `bypass=teleport_zone`, `enabled` (new state) |
 
 Transfer events use one operation correlation UUID across the requested,
@@ -28,11 +28,10 @@ protection checks are audited.
 
 ## Transfer correlation forwarding
 
-Immediately before the BungeeCord `Connect` message, the lobby sends one plugin
-message on channel `mysterria:transfer` through the same player connection, so
-the destination server can link its arrival audit row to the lobby's transfer
-lifecycle. Payload (Java `DataOutput` encoding, as written by Guava
-`ByteArrayDataOutput`):
+Immediately before the BungeeCord `Connect` message, the lobby hands the transfer
+correlation payload to the proxy so the destination server can link its arrival
+audit row to the lobby's transfer lifecycle. Payload (Java `DataOutput` encoding,
+as written by Guava `ByteArrayDataOutput`):
 
 | Order | Type | Field | Notes |
 | --- | --- | --- | --- |
@@ -40,23 +39,35 @@ lifecycle. Payload (Java `DataOutput` encoding, as written by Guava
 | 2 | `UTF` (modified UTF-8, 2-byte length prefix) | correlation UUID | Canonical `UUID.toString()` form; equals the `correlation_id` of the lobby `transfer.*` rows, and `business_id` is `transfer:<correlation UUID>` |
 | 3 | `UTF` | zone ID | Source teleport zone ID; empty string for manual transfers (`/tpzone teleport`, `[TELEPORT]` actions) |
 
-Channel registration requirement: Paper only sends a plugin message on a channel
-that the player's connection has registered via `minecraft:register`; otherwise it
-drops the message silently. The vanilla client never registers `mysterria:transfer`,
-so the proxy must register `mysterria:transfer` toward the lobby backend for each
-player connection. Without that registration the lobby skips the send and records
-`correlation_forwarded=false` with `forward_skipped=channel_not_registered` on the
-`transfer.dispatched` row. This repository contains no proxy-side forwarder.
+Routes:
 
-Delivery notes for the receiving side: plugin messages on this channel go to the
-proxy first. The proxy must forward (or re-emit) the payload to the destination
-backend for it to be observed there, and it may arrive before the player
-finishes joining the destination, so receivers should buffer it briefly keyed
-by player UUID. A missing message means only that correlation is unavailable;
+1. `bungeecord_forward` (always attempted): a `BungeeCord` channel message with
+   sub-channel `Forward`, target = destination server name, forwarded sub-channel
+   name `mysterria:transfer`, then a `short` payload length and the payload bytes.
+   BungeeCord and Velocity handle `Forward` natively and deliver it to the named
+   backend as a `BungeeCord` channel message containing `UTF "mysterria:transfer"`,
+   `short length`, payload. The proxy delivers it only if that backend currently
+   has at least one connected player (standard `Forward` semantics), so the first
+   player on an empty destination server gets no correlation.
+2. `direct_channel` (optional): the payload alone on channel `mysterria:transfer`,
+   sent only when the connection registered that channel via `minecraft:register`
+   (for example a proxy plugin that intercepts it). Paper drops plugin messages on
+   unregistered channels, and vanilla clients never register it.
+
+Delivery notes for the receiving side: the forwarded payload usually arrives
+before the player finishes joining the destination and carries no player UUID of
+its own, so receivers should buffer it briefly and match it to the next arrival
+from the lobby (the zone ID and arrival time narrow the match). A missing message means only that correlation is unavailable;
 the transfer is unaffected. A forwarding failure is logged at `FINE` and never
 blocks the `Connect` dispatch. A receiving server can read it with:
 
 ```java
+// Register an incoming listener on "BungeeCord" (and "mysterria:transfer" for the direct route).
+DataInputStream wrapper = new DataInputStream(new ByteArrayInputStream(bungeeMessage));
+if (!"mysterria:transfer".equals(wrapper.readUTF())) return;
+byte[] message = new byte[wrapper.readShort()];
+wrapper.readFully(message);
+
 DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
 int version = in.readUnsignedByte();          // 1
 UUID correlationId = UUID.fromString(in.readUTF());

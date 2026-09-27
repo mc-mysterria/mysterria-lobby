@@ -354,10 +354,11 @@ public class TeleportManager {
 
         teleportTasks.put(player.getUniqueId(), task);
         transferContexts.put(player.getUniqueId(), context);
+        Map<String, Object> requested = transferMetadata(player, "zone", zone.getServerName());
+        requested.put("zone_id", zone.getId());
+        requested.put("delay_seconds", zone.getDelay());
         MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
-                context.correlationId(), context.businessId(), player.getUniqueId(), null,
-                Map.of("source", "zone", "zone_id", zone.getId(), "server", zone.getServerName(),
-                        "delay_seconds", zone.getDelay()));
+                context.correlationId(), context.businessId(), player.getUniqueId(), null, requested);
     }
 
     private void showCountdownEffects(Player player, int countdown, String serverName) {
@@ -380,7 +381,7 @@ public class TeleportManager {
         TransferContext context = TransferContext.create(null, serverName);
         MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
                 context.correlationId(), context.businessId(), player.getUniqueId(), null,
-                Map.of("source", "manual", "server", serverName));
+                transferMetadata(player, "manual", serverName));
         teleportToServer(player, serverName, context);
     }
 
@@ -401,53 +402,76 @@ public class TeleportManager {
         out.writeUTF("Connect");
         out.writeUTF(serverName);
 
-        String forwardSkipped = forwardTransferCorrelation(player, context);
+        List<String> forwardRoutes = forwardTransferCorrelation(player, serverName, context);
         try {
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-            Map<String, Object> metadata = new HashMap<>();
-            metadata.put("source", context.source());
-            metadata.put("server", serverName);
+            Map<String, Object> metadata = transferMetadata(player, context.source(), serverName);
             metadata.put("observed_via", "bungeecord_connect_dispatch");
-            metadata.put("correlation_forwarded", forwardSkipped == null);
-            if (forwardSkipped != null) {
-                metadata.put("forward_skipped", forwardSkipped);
-            }
+            metadata.put("correlation_forwarded", !forwardRoutes.isEmpty());
+            metadata.put("forward_routes", String.join(",", forwardRoutes));
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.OBSERVED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), null,
                     metadata);
         } catch (RuntimeException failure) {
+            Map<String, Object> metadata = transferMetadata(player, context.source(), serverName);
+            metadata.put("failure_type", failure.getClass().getSimpleName());
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.FAILED,
                     context.correlationId(), context.businessId(), player.getUniqueId(),
-                    "bungeecord_dispatch_failed",
-                    Map.of("source", context.source(), "server", serverName,
-                            "failure_type", failure.getClass().getSimpleName()));
+                    "bungeecord_dispatch_failed", metadata);
             throw failure;
         }
     }
 
+    private static Map<String, Object> transferMetadata(Player player, String source, String serverName) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("source", source);
+        metadata.put("server", serverName);
+        MysterriaAuditEmitter.putLocation(metadata, player.getLocation());
+        return metadata;
+    }
+
     /**
      * Best-effort hand-off of the transfer correlation ID ahead of the Connect request.
+     * The payload is routed to the destination backend through the proxy's BungeeCord
+     * {@code Forward} sub-channel (sub-channel name {@code mysterria:transfer}), which both
+     * BungeeCord and Velocity handle natively. It is additionally sent directly on
+     * {@code mysterria:transfer} when the connection registered that channel.
      * A failure here must never prevent the transfer itself.
-     * Paper silently drops plugin messages on channels the connection has not registered
-     * (minecraft:register), so the send is skipped unless the proxy registered the channel.
      *
-     * @return {@code null} when the message was handed to the connection, otherwise a skip reason
+     * @return the routes the payload was handed to ({@code bungeecord_forward}, {@code direct_channel})
      */
-    private String forwardTransferCorrelation(Player player, TransferContext context) {
-        if (!player.getListeningPluginChannels().contains(TRANSFER_CHANNEL)) {
-            return "channel_not_registered";
-        }
+    private List<String> forwardTransferCorrelation(Player player, String serverName, TransferContext context) {
+        List<String> routes = new ArrayList<>(2);
+        byte[] payload = transferPayload(context);
         try {
-            ByteArrayDataOutput payload = ByteStreams.newDataOutput();
-            payload.writeByte(TRANSFER_PAYLOAD_VERSION);
-            payload.writeUTF(context.correlationId().toString());
-            payload.writeUTF(context.zoneId() == null ? "" : context.zoneId());
-            player.sendPluginMessage(plugin, TRANSFER_CHANNEL, payload.toByteArray());
-            return null;
+            ByteArrayDataOutput forward = ByteStreams.newDataOutput();
+            forward.writeUTF("Forward");
+            forward.writeUTF(serverName);
+            forward.writeUTF(TRANSFER_CHANNEL);
+            forward.writeShort(payload.length);
+            forward.write(payload);
+            player.sendPluginMessage(plugin, "BungeeCord", forward.toByteArray());
+            routes.add("bungeecord_forward");
         } catch (RuntimeException failure) {
-            plugin.getLogger().fine("Failed to forward transfer correlation: " + failure.getMessage());
-            return "send_failed";
+            plugin.getLogger().fine("Failed to forward transfer correlation via proxy: " + failure.getMessage());
         }
+        if (player.getListeningPluginChannels().contains(TRANSFER_CHANNEL)) {
+            try {
+                player.sendPluginMessage(plugin, TRANSFER_CHANNEL, payload);
+                routes.add("direct_channel");
+            } catch (RuntimeException failure) {
+                plugin.getLogger().fine("Failed to send transfer correlation: " + failure.getMessage());
+            }
+        }
+        return routes;
+    }
+
+    private static byte[] transferPayload(TransferContext context) {
+        ByteArrayDataOutput payload = ByteStreams.newDataOutput();
+        payload.writeByte(TRANSFER_PAYLOAD_VERSION);
+        payload.writeUTF(context.correlationId().toString());
+        payload.writeUTF(context.zoneId() == null ? "" : context.zoneId());
+        return payload.toByteArray();
     }
 
     public void cancelTeleport(Player player) {
@@ -521,9 +545,25 @@ public class TeleportManager {
     }
 
     public boolean toggleSeaEffect(String zoneId) {
+        return toggleSeaEffect(zoneId, null);
+    }
+
+    /** Toggles the runtime sea boundary display and audits the change as a zone update. */
+    public boolean toggleSeaEffect(String zoneId, UUID actorId) {
         if (!zones.containsKey(zoneId)) {
             return false;
         }
+        boolean enabled = applySeaEffectToggle(zoneId);
+        Map<String, Object> values = new LinkedHashMap<>(MysterriaAuditEmitter.zoneMetadata(zones.get(zoneId)));
+        values.put("source", "togglesea");
+        values.put("change", "sea_effect_toggled");
+        values.put("changed_fields", "sea_effect");
+        values.put("sea_effect", enabled);
+        MysterriaAuditEmitter.emitZoneAdmin("updated", UUID.randomUUID(), zoneId, actorId, values);
+        return enabled;
+    }
+
+    private boolean applySeaEffectToggle(String zoneId) {
 
         if (zonesWithSeaEffect.contains(zoneId)) {
             zonesWithSeaEffect.remove(zoneId);

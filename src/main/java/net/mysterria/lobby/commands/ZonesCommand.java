@@ -193,7 +193,7 @@ public class ZonesCommand {
             return;
         }
 
-        boolean isEnabled = plugin.getTeleportManager().toggleSeaEffect(zone.getId());
+        boolean isEnabled = plugin.getTeleportManager().toggleSeaEffect(zone.getId(), player.getUniqueId());
 
         if (isEnabled) {
             player.sendMessage(plugin.getLangManager().getLocalizedComponent(player, "teleport.sea_enabled").replaceText(builder -> builder.match("%zone%").replacement(zone.getId())));
