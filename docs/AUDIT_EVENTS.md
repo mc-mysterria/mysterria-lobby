@@ -10,19 +10,21 @@ The optional per-server audit engine owns SQLite and local staff searches. Each 
 | --- | --- | --- | --- |
 | `mysterria-lobby.transfer.requested` | `ATTEMPTED` | A zone countdown is scheduled or an explicit server transfer is dispatched | `business_id=transfer:<correlation UUID>`, actor/subject are the player; all `requested` and `dispatched` rows carry the player's block location as `world`, `x`, `y`, `z` (`cancelled` rows for players who already went offline omit them) |
 | `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the correlation payload was handed to the player connection on at least one route; `forward_routes` is a comma-separated list of `bungeecord_forward` (proxy `Forward` to the destination server) and `direct_channel` (direct `mysterria:transfer` message, only when the connection registered that channel) |
-| `mysterria-lobby.transfer.cancelled` | `CANCELLED` | A scheduled countdown task is cancelled (reload, quit, or explicit cancellation) | Same correlation and business ID as the request |
-| `mysterria-lobby.visibility.preference_changed` | `COMMITTED` | Player visibility preference is written to the persistent data container | `business_id=visibility:<player UUID>`, actor/subject are the player |
-| `mysterria-lobby.zone.created` | `COMMITTED` | Zone is registered and `teleport-zones.yml` is saved | `business_id=zone:<zone ID>`, actor is the staff player |
-| `mysterria-lobby.zone.deleted` | `COMMITTED` | Zone is removed and `teleport-zones.yml` is saved | Same stable zone business ID, actor is the staff player |
+| `mysterria-lobby.transfer.cancelled` | `CANCELLED` | A scheduled countdown task is cancelled (reload, quit, or explicit cancellation) | Same correlation and business ID as the request; `world`/`x`/`y`/`z` when the player is still online; `server=unknown` with `reason=malformed_zone` when the zone had no server name |
+| `mysterria-lobby.visibility.preference_changed` | `COMMITTED` | Player visibility preference is written to the persistent data container | `business_id=visibility:<player UUID>`, actor/subject are the player; metadata carries the player's `world`/`x`/`y`/`z` |
+| `mysterria-lobby.zone.created` | `COMMITTED` | Zone is registered and `teleport-zones.yml` is saved; `FAILED` (`reason=save_failed` or `exception`, plus `failure_type`) when registration or the save fails | `business_id=zone:<zone ID>`, actor is the staff player |
+| `mysterria-lobby.zone.deleted` | `COMMITTED` | Zone is removed and `teleport-zones.yml` is saved; `FAILED` (`reason=save_failed` or `exception`) when removal or the save fails | Same stable zone business ID, actor is the staff player |
 | `mysterria-lobby.zone.updated` | `COMMITTED` | `/lobby reload` re-read `teleport-zones.yml` and a zone definition was added, removed, or modified compared to the previous in-memory set (one row per changed zone, none when nothing changed) | Same stable zone business ID; actor is the staff player who ran the reload (absent for console); all rows from one reload share a correlation UUID; metadata adds `source=reload`, `change` (`added`/`removed`/`modified`) and, for `modified`, `changed_fields`. `/tpzone togglesea` also emits `zone.updated` after flipping the runtime sea boundary display (not persisted), with a fresh correlation UUID, actor the staff player, `source=togglesea`, `change=sea_effect_toggled`, `changed_fields=sea_effect` and `sea_effect` (new state) |
-| `mysterria-lobby.staff.bypass_toggled` | `COMMITTED` | `/tpzone bypass` flipped the in-memory teleport-zone bypass flag (not persisted; cleared on quit without a row) | `business_id=bypass:<player UUID>`, actor/subject are the staff player; metadata `bypass=teleport_zone`, `enabled` (new state) |
+| `mysterria-lobby.staff.bypass_toggled` | `COMMITTED` | `/tpzone bypass` flipped the in-memory teleport-zone bypass flag (not persisted; cleared on quit without a row) | `business_id=bypass:<player UUID>`, actor/subject are the staff player; metadata `bypass=teleport_zone`, `enabled` (new state), and the staff player's `world`/`x`/`y`/`z` |
 
 Transfer events use one operation correlation UUID across the requested,
 dispatched, and cancelled lifecycle. Zone, bypass, and preference commands receive a new
 correlation UUID for each committed operation (a reload shares one UUID across
 its `zone.updated` rows). Metadata keys are snake_case and
-bounded before emission; zone metadata includes server, world, bounds, delay,
-and permission. No chat text, player names, movement, routine spawn/void
+bounded before emission; zone metadata includes server, `zone_world`, bounds, delay,
+and permission. Zone rows (`created`, `deleted`, `updated`) also carry the acting
+staff player's block location as `world`, `x`, `y`, `z` when that player is online
+(absent for console reloads). No chat text, player names, movement, routine spawn/void
 teleports, GUI previews, particles, debug rendering, action bars, or world
 protection checks are audited.
 
