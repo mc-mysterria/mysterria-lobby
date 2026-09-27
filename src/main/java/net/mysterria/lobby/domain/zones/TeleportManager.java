@@ -129,6 +129,8 @@ public class TeleportManager {
             });
             values.put("changed_fields", String.join(",", changed));
         }
+        Player actor = actorId == null ? null : Bukkit.getPlayer(actorId);
+        if (actor != null) MysterriaAuditEmitter.putLocation(values, actor.getLocation());
         MysterriaAuditEmitter.emitZoneAdmin("updated", correlationId, zoneId, actorId, values);
     }
 
@@ -481,11 +483,20 @@ public class TeleportManager {
             task.cancel();
         }
         if (context != null) {
-            MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
-                    context.correlationId(), context.businessId(), player.getUniqueId(), "teleport_task_cancelled",
-                    Map.of("source", context.source(), "server", context.serverName(),
-                            "zone_id", context.zoneId() == null ? "" : context.zoneId()));
+            emitCancelled(context, player.getUniqueId(), player.getLocation());
         }
+    }
+
+    /** Emits transfer.cancelled; the location is omitted when the player is already offline. */
+    private static void emitCancelled(TransferContext context, UUID playerId, Location location) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("source", context.source());
+        metadata.put("server", context.serverName() == null ? "unknown" : context.serverName());
+        metadata.put("zone_id", context.zoneId() == null ? "" : context.zoneId());
+        MysterriaAuditEmitter.putLocation(metadata, location);
+        String reason = context.serverName() == null ? "malformed_zone" : "teleport_task_cancelled";
+        MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
+                context.correlationId(), context.businessId(), playerId, reason, metadata);
     }
 
     public void cancelAllTeleports() {
@@ -500,11 +511,7 @@ public class TeleportManager {
                 if (task != null) task.cancel();
                 TransferContext context = transferContexts.remove(playerId);
                 if (context != null) {
-                    MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
-                            context.correlationId(), context.businessId(), playerId,
-                            "teleport_task_cancelled",
-                            Map.of("source", context.source(), "server", context.serverName(),
-                                    "zone_id", context.zoneId() == null ? "" : context.zoneId()));
+                    emitCancelled(context, playerId, null);
                 }
             }
         }
@@ -520,11 +527,16 @@ public class TeleportManager {
     }
 
     public boolean toggleBypass(UUID playerUuid) {
+        return toggleBypass(playerUuid, null);
+    }
+
+    /** @param actorLocation the staff player's location for the audit row, or {@code null} if unknown */
+    public boolean toggleBypass(UUID playerUuid, Location actorLocation) {
         boolean enabled = !bypassPlayers.remove(playerUuid);
         if (enabled) {
             bypassPlayers.add(playerUuid);
         }
-        MysterriaAuditEmitter.emitBypassToggled(UUID.randomUUID(), playerUuid, enabled);
+        MysterriaAuditEmitter.emitBypassToggled(UUID.randomUUID(), playerUuid, actorLocation, enabled);
         return enabled;
     }
 
@@ -550,6 +562,11 @@ public class TeleportManager {
 
     /** Toggles the runtime sea boundary display and audits the change as a zone update. */
     public boolean toggleSeaEffect(String zoneId, UUID actorId) {
+        return toggleSeaEffect(zoneId, actorId, null);
+    }
+
+    /** @param actorLocation the staff player's location for the audit row, or {@code null} if unknown */
+    public boolean toggleSeaEffect(String zoneId, UUID actorId, Location actorLocation) {
         if (!zones.containsKey(zoneId)) {
             return false;
         }
@@ -559,6 +576,7 @@ public class TeleportManager {
         values.put("change", "sea_effect_toggled");
         values.put("changed_fields", "sea_effect");
         values.put("sea_effect", enabled);
+        MysterriaAuditEmitter.putLocation(values, actorLocation);
         MysterriaAuditEmitter.emitZoneAdmin("updated", UUID.randomUUID(), zoneId, actorId, values);
         return enabled;
     }
