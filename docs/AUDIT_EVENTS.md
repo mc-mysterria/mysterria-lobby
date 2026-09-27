@@ -9,7 +9,7 @@ The optional per-server audit engine owns SQLite and local staff searches. Each 
 | Event type | Outcome | Commit/observation point | Identifiers |
 | --- | --- | --- | --- |
 | `mysterria-lobby.transfer.requested` | `ATTEMPTED` | A zone countdown is scheduled or an explicit server transfer is dispatched | `business_id=transfer:<correlation UUID>`, actor/subject are the player |
-| `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the `mysterria:transfer` message was sent |
+| `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the `mysterria:transfer` message was handed to the player connection; when `false`, `forward_skipped` is `channel_not_registered` (the connection has not registered the channel) or `send_failed` |
 | `mysterria-lobby.transfer.cancelled` | `CANCELLED` | A scheduled countdown task is cancelled (reload, quit, or explicit cancellation) | Same correlation and business ID as the request |
 | `mysterria-lobby.visibility.preference_changed` | `COMMITTED` | Player visibility preference is written to the persistent data container | `business_id=visibility:<player UUID>`, actor/subject are the player |
 | `mysterria-lobby.zone.created` | `COMMITTED` | Zone is registered and `teleport-zones.yml` is saved | `business_id=zone:<zone ID>`, actor is the staff player |
@@ -39,6 +39,14 @@ lifecycle. Payload (Java `DataOutput` encoding, as written by Guava
 | 1 | `byte` | payload version | Currently `1`; reject or ignore unknown versions |
 | 2 | `UTF` (modified UTF-8, 2-byte length prefix) | correlation UUID | Canonical `UUID.toString()` form; equals the `correlation_id` of the lobby `transfer.*` rows, and `business_id` is `transfer:<correlation UUID>` |
 | 3 | `UTF` | zone ID | Source teleport zone ID; empty string for manual transfers (`/tpzone teleport`, `[TELEPORT]` actions) |
+
+Channel registration requirement: Paper only sends a plugin message on a channel
+that the player's connection has registered via `minecraft:register`; otherwise it
+drops the message silently. The vanilla client never registers `mysterria:transfer`,
+so the proxy must register `mysterria:transfer` toward the lobby backend for each
+player connection. Without that registration the lobby skips the send and records
+`correlation_forwarded=false` with `forward_skipped=channel_not_registered` on the
+`transfer.dispatched` row. This repository contains no proxy-side forwarder.
 
 Delivery notes for the receiving side: plugin messages on this channel go to the
 proxy first. The proxy must forward (or re-emit) the payload to the destination

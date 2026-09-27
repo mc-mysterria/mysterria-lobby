@@ -401,14 +401,20 @@ public class TeleportManager {
         out.writeUTF("Connect");
         out.writeUTF(serverName);
 
-        boolean correlationForwarded = forwardTransferCorrelation(player, context);
+        String forwardSkipped = forwardTransferCorrelation(player, context);
         try {
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("source", context.source());
+            metadata.put("server", serverName);
+            metadata.put("observed_via", "bungeecord_connect_dispatch");
+            metadata.put("correlation_forwarded", forwardSkipped == null);
+            if (forwardSkipped != null) {
+                metadata.put("forward_skipped", forwardSkipped);
+            }
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.OBSERVED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), null,
-                    Map.of("source", context.source(), "server", serverName,
-                            "observed_via", "bungeecord_connect_dispatch",
-                            "correlation_forwarded", correlationForwarded));
+                    metadata);
         } catch (RuntimeException failure) {
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.FAILED,
                     context.correlationId(), context.businessId(), player.getUniqueId(),
@@ -422,18 +428,25 @@ public class TeleportManager {
     /**
      * Best-effort hand-off of the transfer correlation ID ahead of the Connect request.
      * A failure here must never prevent the transfer itself.
+     * Paper silently drops plugin messages on channels the connection has not registered
+     * (minecraft:register), so the send is skipped unless the proxy registered the channel.
+     *
+     * @return {@code null} when the message was handed to the connection, otherwise a skip reason
      */
-    private boolean forwardTransferCorrelation(Player player, TransferContext context) {
+    private String forwardTransferCorrelation(Player player, TransferContext context) {
+        if (!player.getListeningPluginChannels().contains(TRANSFER_CHANNEL)) {
+            return "channel_not_registered";
+        }
         try {
             ByteArrayDataOutput payload = ByteStreams.newDataOutput();
             payload.writeByte(TRANSFER_PAYLOAD_VERSION);
             payload.writeUTF(context.correlationId().toString());
             payload.writeUTF(context.zoneId() == null ? "" : context.zoneId());
             player.sendPluginMessage(plugin, TRANSFER_CHANNEL, payload.toByteArray());
-            return true;
+            return null;
         } catch (RuntimeException failure) {
             plugin.getLogger().fine("Failed to forward transfer correlation: " + failure.getMessage());
-            return false;
+            return "send_failed";
         }
     }
 
