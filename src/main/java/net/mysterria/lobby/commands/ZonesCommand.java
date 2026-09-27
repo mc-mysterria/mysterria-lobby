@@ -367,7 +367,7 @@ public class ZonesCommand {
 
     private void emitZoneAdmin(String event, String zoneId, UUID actorId, TeleportZone zone) {
         try {
-            MysterriaAuditEmitter.emitZoneAdmin(plugin, event, UUID.randomUUID(), zoneId,
+            MysterriaAuditEmitter.emitZoneAdmin(event, UUID.randomUUID(), zoneId,
                     actorId, zoneMetadata(zone));
         } catch (RuntimeException | LinkageError failure) {
             plugin.getLogger().log(Level.FINE, "Mysterria zone audit metadata was unavailable", failure);

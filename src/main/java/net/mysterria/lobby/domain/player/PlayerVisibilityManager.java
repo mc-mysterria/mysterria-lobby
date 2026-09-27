@@ -80,7 +80,7 @@ public class PlayerVisibilityManager {
         boolean previous = arePlayersVisible(player);
         player.getPersistentDataContainer().set(visibilityKey, PersistentDataType.BOOLEAN, visible);
         if (previous != visible) {
-            MysterriaAuditEmitter.emitPreferenceChanged(plugin, UUID.randomUUID(), player.getUniqueId(), previous, visible);
+            MysterriaAuditEmitter.emitPreferenceChanged(UUID.randomUUID(), player.getUniqueId(), previous, visible);
         }
         updatePlayerVisibility(player);
         updateVisibilityItem(player);

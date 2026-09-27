@@ -37,7 +37,7 @@ public final class MysterriaAuditEmitter {
      * Emits without waiting for persistence. Missing or failing audit infrastructure
      * never change lobby behavior or gate the authoritative mutation.
      */
-    private static void emit(JavaPlugin plugin, String event, AuditOutcome outcome,
+    private static void emit(String event, AuditOutcome outcome,
                              AuditRisk risk, UUID correlationId, String businessId,
                              UUID actorId, UUID subjectId, UUID targetId, String reason,
                              AuditPrivacy privacy, Map<String, ?> values) {
@@ -58,24 +58,24 @@ public final class MysterriaAuditEmitter {
         }
     }
 
-    public static void emitTransfer(JavaPlugin plugin, String event, AuditOutcome outcome,
+    public static void emitTransfer(String event, AuditOutcome outcome,
                                     UUID correlationId, String businessId, UUID playerId,
                                     String reason, Map<String, ?> values) {
-        emit(plugin, "transfer." + event, outcome, AuditRisk.NORMAL, correlationId,
+        emit("transfer." + event, outcome, AuditRisk.NORMAL, correlationId,
                 businessId, playerId, playerId, null, reason, AuditPrivacy.STAFF_RESTRICTED, values);
     }
 
-    public static void emitPreferenceChanged(JavaPlugin plugin, UUID correlationId,
+    public static void emitPreferenceChanged(UUID correlationId,
                                              UUID playerId, boolean previous, boolean value) {
-        emit(plugin, "visibility.preference_changed", AuditOutcome.COMMITTED, AuditRisk.LOW,
+        emit("visibility.preference_changed", AuditOutcome.COMMITTED, AuditRisk.LOW,
                 correlationId, "visibility:" + playerId, playerId, playerId, null, null,
                 AuditPrivacy.STAFF_RESTRICTED,
                 Map.of("preference", "players_visible", "previous", previous, "value", value));
     }
 
-    public static void emitZoneAdmin(JavaPlugin plugin, String event, UUID correlationId,
+    public static void emitZoneAdmin(String event, UUID correlationId,
                                      String zoneId, UUID actorId, Map<String, ?> values) {
-        emit(plugin, "zone." + event, AuditOutcome.COMMITTED, AuditRisk.NORMAL,
+        emit("zone." + event, AuditOutcome.COMMITTED, AuditRisk.NORMAL,
                 correlationId, "zone:" + safe(zoneId), actorId, null, null, null,
                 AuditPrivacy.STAFF_RESTRICTED, values);
     }

@@ -304,7 +304,7 @@ public class TeleportManager {
 
         teleportTasks.put(player.getUniqueId(), task);
         transferContexts.put(player.getUniqueId(), context);
-        MysterriaAuditEmitter.emitTransfer(plugin, "requested", AuditOutcome.ATTEMPTED,
+        MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
                 context.correlationId(), context.businessId(), player.getUniqueId(), null,
                 Map.of("source", "zone", "zone_id", zone.getId(), "server", zone.getServerName(),
                         "delay_seconds", zone.getDelay()));
@@ -328,7 +328,7 @@ public class TeleportManager {
 
     public void teleportToServer(Player player, String serverName) {
         TransferContext context = TransferContext.create(null, serverName);
-        MysterriaAuditEmitter.emitTransfer(plugin, "requested", AuditOutcome.ATTEMPTED,
+        MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
                 context.correlationId(), context.businessId(), player.getUniqueId(), null,
                 Map.of("source", "manual", "server", serverName));
         teleportToServer(player, serverName, context);
@@ -353,12 +353,12 @@ public class TeleportManager {
 
         try {
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
-            MysterriaAuditEmitter.emitTransfer(plugin, "dispatched", AuditOutcome.OBSERVED,
+            MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.OBSERVED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), null,
                     Map.of("source", context.source(), "server", serverName,
                             "observed_via", "bungeecord_connect_dispatch"));
         } catch (RuntimeException failure) {
-            MysterriaAuditEmitter.emitTransfer(plugin, "dispatched", AuditOutcome.FAILED,
+            MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.FAILED,
                     context.correlationId(), context.businessId(), player.getUniqueId(),
                     "bungeecord_dispatch_failed",
                     Map.of("source", context.source(), "server", serverName,
@@ -374,7 +374,7 @@ public class TeleportManager {
             task.cancel();
         }
         if (context != null) {
-            MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", AuditOutcome.CANCELLED,
+            MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), "teleport_task_cancelled",
                     Map.of("source", context.source(), "server", context.serverName(),
                             "zone_id", context.zoneId() == null ? "" : context.zoneId()));
@@ -393,7 +393,7 @@ public class TeleportManager {
                 if (task != null) task.cancel();
                 TransferContext context = transferContexts.remove(playerId);
                 if (context != null) {
-                    MysterriaAuditEmitter.emitTransfer(plugin, "cancelled", AuditOutcome.CANCELLED,
+                    MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
                             context.correlationId(), context.businessId(), playerId,
                             "teleport_task_cancelled",
                             Map.of("source", context.source(), "server", context.serverName(),
