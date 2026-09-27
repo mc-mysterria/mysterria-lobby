@@ -75,12 +75,15 @@ public final class MysterriaLobby extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (liteCommands != null) liteCommands.unregister();
-        if (teleportManager != null) teleportManager.cancelAllTeleports();
-        if (actionBarManager != null) actionBarManager.stop();
-        if (announcementManager != null) announcementManager.stop();
-        if (bossBarManager != null) bossBarManager.stop();
-        MysterriaAuditEmitter.close();
+        try {
+            if (liteCommands != null) liteCommands.unregister();
+            if (teleportManager != null) teleportManager.cancelAllTeleports();
+            if (actionBarManager != null) actionBarManager.stop();
+            if (announcementManager != null) announcementManager.stop();
+            if (bossBarManager != null) bossBarManager.stop();
+        } finally {
+            MysterriaAuditEmitter.close();
+        }
         getLogger().info("MysterriaLobby has been disabled!");
     }
 
