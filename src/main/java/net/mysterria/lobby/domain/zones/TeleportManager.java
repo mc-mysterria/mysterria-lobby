@@ -29,6 +29,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TeleportManager {
 
+    /**
+     * Outgoing plugin channel carrying the transfer correlation ID. Payload layout is
+     * documented in docs/AUDIT_EVENTS.md ("Transfer correlation forwarding").
+     */
+    public static final String TRANSFER_CHANNEL = "mysterria:transfer";
+    private static final int TRANSFER_PAYLOAD_VERSION = 1;
 
     private final MysterriaLobby plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
@@ -49,6 +55,7 @@ public class TeleportManager {
         loadZones();
 
         plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, "BungeeCord");
+        plugin.getServer().getMessenger().registerOutgoingPluginChannel(plugin, TRANSFER_CHANNEL);
     }
 
     private void createConfigFile() {
@@ -394,12 +401,14 @@ public class TeleportManager {
         out.writeUTF("Connect");
         out.writeUTF(serverName);
 
+        boolean correlationForwarded = forwardTransferCorrelation(player, context);
         try {
             player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.OBSERVED,
                     context.correlationId(), context.businessId(), player.getUniqueId(), null,
                     Map.of("source", context.source(), "server", serverName,
-                            "observed_via", "bungeecord_connect_dispatch"));
+                            "observed_via", "bungeecord_connect_dispatch",
+                            "correlation_forwarded", correlationForwarded));
         } catch (RuntimeException failure) {
             MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.FAILED,
                     context.correlationId(), context.businessId(), player.getUniqueId(),
@@ -407,6 +416,24 @@ public class TeleportManager {
                     Map.of("source", context.source(), "server", serverName,
                             "failure_type", failure.getClass().getSimpleName()));
             throw failure;
+        }
+    }
+
+    /**
+     * Best-effort hand-off of the transfer correlation ID ahead of the Connect request.
+     * A failure here must never prevent the transfer itself.
+     */
+    private boolean forwardTransferCorrelation(Player player, TransferContext context) {
+        try {
+            ByteArrayDataOutput payload = ByteStreams.newDataOutput();
+            payload.writeByte(TRANSFER_PAYLOAD_VERSION);
+            payload.writeUTF(context.correlationId().toString());
+            payload.writeUTF(context.zoneId() == null ? "" : context.zoneId());
+            player.sendPluginMessage(plugin, TRANSFER_CHANNEL, payload.toByteArray());
+            return true;
+        } catch (RuntimeException failure) {
+            plugin.getLogger().fine("Failed to forward transfer correlation: " + failure.getMessage());
+            return false;
         }
     }
 
