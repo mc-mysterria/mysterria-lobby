@@ -28,7 +28,7 @@ public class LobbyCommands {
         long startTime = System.currentTimeMillis();
         
         try {
-            plugin.reload();
+            plugin.reload(sender instanceof Player player ? player.getUniqueId() : null);
             long duration = System.currentTimeMillis() - startTime;
             
             sender.sendMessage(miniMessage.deserialize(

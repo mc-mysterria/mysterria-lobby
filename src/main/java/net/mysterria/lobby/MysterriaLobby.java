@@ -23,6 +23,8 @@ import net.mysterria.lobby.listeners.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.UUID;
+
 public final class MysterriaLobby extends JavaPlugin {
 
     private static MysterriaLobby instance;
@@ -99,10 +101,15 @@ public final class MysterriaLobby extends JavaPlugin {
     }
 
     public void reload() {
+        reload(null);
+    }
+
+    /** @param actorId staff player who requested the reload, or {@code null} for console */
+    public void reload(UUID actorId) {
         configManager.reload();
         langManager.reload();
         guiManager.reload();
-        teleportManager.reload();
+        teleportManager.reload(actorId);
         playerVisibilityManager.reload();
         worldProtectionManager.reload();
         spawnManager.reload();

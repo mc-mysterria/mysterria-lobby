@@ -4,9 +4,11 @@ import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditPrivacy;
 import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditProducer;
 import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditRisk;
+import net.mysterria.lobby.domain.zones.TeleportZone;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -78,6 +80,31 @@ public final class MysterriaAuditEmitter {
         emit("zone." + event, AuditOutcome.COMMITTED, AuditRisk.NORMAL,
                 correlationId, "zone:" + safe(zoneId), actorId, null, null, null,
                 AuditPrivacy.STAFF_RESTRICTED, values);
+    }
+
+    public static void emitBypassToggled(UUID correlationId, UUID actorId, boolean enabled) {
+        emit("staff.bypass_toggled", AuditOutcome.COMMITTED, AuditRisk.NORMAL,
+                correlationId, "bypass:" + actorId, actorId, actorId, null, null,
+                AuditPrivacy.STAFF_RESTRICTED,
+                Map.of("bypass", "teleport_zone", "enabled", enabled));
+    }
+
+    /** Stable, bounded description of a zone definition used by zone audit rows. */
+    public static Map<String, Object> zoneMetadata(TeleportZone zone) {
+        if (zone == null) return Map.of();
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("zone_id", safe(zone.getId()));
+        metadata.put("server", safe(zone.getServerName()));
+        metadata.put("world", zone.getWorld() == null ? "unknown" : zone.getWorld().getName());
+        metadata.put("min_x", zone.getMinX());
+        metadata.put("min_y", zone.getMinY());
+        metadata.put("min_z", zone.getMinZ());
+        metadata.put("max_x", zone.getMaxX());
+        metadata.put("max_y", zone.getMaxY());
+        metadata.put("max_z", zone.getMaxZ());
+        metadata.put("delay_seconds", zone.getDelay());
+        metadata.put("permission", safe(zone.getPermission()));
+        return metadata;
     }
 
     private static String safe(String value) {

@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TeleportManager {
 
+
     private final MysterriaLobby plugin;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, TeleportZone> zones = new ConcurrentHashMap<>();
@@ -76,10 +77,52 @@ public class TeleportManager {
     }
 
     public void reload() {
+        reload(null);
+    }
+
+    /** Reloads zones from disk and audits every zone definition the reload changed. */
+    public void reload(UUID actorId) {
+        Map<String, Map<String, Object>> previous = snapshotZoneMetadata();
         zones.clear();
         cancelAllTeleports();
         config = YamlConfiguration.loadConfiguration(configFile);
         loadZones();
+        emitReloadedZoneChanges(previous, actorId);
+    }
+
+    private Map<String, Map<String, Object>> snapshotZoneMetadata() {
+        Map<String, Map<String, Object>> snapshot = new HashMap<>();
+        zones.forEach((id, zone) -> snapshot.put(id, MysterriaAuditEmitter.zoneMetadata(zone)));
+        return snapshot;
+    }
+
+    private void emitReloadedZoneChanges(Map<String, Map<String, Object>> previous, UUID actorId) {
+        Map<String, Map<String, Object>> current = snapshotZoneMetadata();
+        Set<String> ids = new TreeSet<>(previous.keySet());
+        ids.addAll(current.keySet());
+        UUID correlationId = UUID.randomUUID();
+        for (String id : ids) {
+            Map<String, Object> before = previous.get(id);
+            Map<String, Object> after = current.get(id);
+            if (Objects.equals(before, after)) continue;
+            emitZoneUpdated(correlationId, id, actorId, before, after);
+        }
+    }
+
+    private void emitZoneUpdated(UUID correlationId, String zoneId, UUID actorId,
+                                 Map<String, Object> before, Map<String, Object> after) {
+        Map<String, Object> values = new LinkedHashMap<>(after == null ? before : after);
+        values.put("zone_id", zoneId);
+        values.put("source", "reload");
+        values.put("change", before == null ? "added" : after == null ? "removed" : "modified");
+        if (before != null && after != null) {
+            List<String> changed = new ArrayList<>();
+            after.forEach((key, value) -> {
+                if (!Objects.equals(before.get(key), value)) changed.add(key);
+            });
+            values.put("changed_fields", String.join(",", changed));
+        }
+        MysterriaAuditEmitter.emitZoneAdmin("updated", correlationId, zoneId, actorId, values);
     }
 
     private void loadZones() {
@@ -413,12 +456,12 @@ public class TeleportManager {
     }
 
     public boolean toggleBypass(UUID playerUuid) {
-        if (bypassPlayers.contains(playerUuid)) {
-            bypassPlayers.remove(playerUuid);
-            return false;
+        boolean enabled = !bypassPlayers.remove(playerUuid);
+        if (enabled) {
+            bypassPlayers.add(playerUuid);
         }
-        bypassPlayers.add(playerUuid);
-        return true;
+        MysterriaAuditEmitter.emitBypassToggled(UUID.randomUUID(), playerUuid, enabled);
+        return enabled;
     }
 
     public boolean isBypassing(UUID playerUuid) {

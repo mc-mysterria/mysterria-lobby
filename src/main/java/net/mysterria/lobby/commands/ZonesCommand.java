@@ -348,27 +348,10 @@ public class ZonesCommand {
         }
     }
 
-    private Map<String, Object> zoneMetadata(TeleportZone zone) {
-        if (zone == null) return Map.of();
-        Map<String, Object> metadata = new java.util.LinkedHashMap<>();
-        metadata.put("zone_id", zone.getId());
-        metadata.put("server", zone.getServerName());
-        metadata.put("world", zone.getWorld() == null ? "unknown" : zone.getWorld().getName());
-        metadata.put("min_x", zone.getMinX());
-        metadata.put("min_y", zone.getMinY());
-        metadata.put("min_z", zone.getMinZ());
-        metadata.put("max_x", zone.getMaxX());
-        metadata.put("max_y", zone.getMaxY());
-        metadata.put("max_z", zone.getMaxZ());
-        metadata.put("delay_seconds", zone.getDelay());
-        metadata.put("permission", zone.getPermission());
-        return metadata;
-    }
-
     private void emitZoneAdmin(String event, String zoneId, UUID actorId, TeleportZone zone) {
         try {
             MysterriaAuditEmitter.emitZoneAdmin(event, UUID.randomUUID(), zoneId,
-                    actorId, zoneMetadata(zone));
+                    actorId, MysterriaAuditEmitter.zoneMetadata(zone));
         } catch (RuntimeException | LinkageError failure) {
             plugin.getLogger().log(Level.FINE, "Mysterria zone audit metadata was unavailable", failure);
         }
