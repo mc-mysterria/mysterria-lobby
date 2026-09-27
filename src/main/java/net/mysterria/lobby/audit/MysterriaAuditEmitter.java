@@ -5,6 +5,7 @@ import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditPrivacy;
 import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditProducer;
 import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditRisk;
 import net.mysterria.lobby.domain.zones.TeleportZone;
+import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
 
@@ -105,6 +106,15 @@ public final class MysterriaAuditEmitter {
         metadata.put("delay_seconds", zone.getDelay());
         metadata.put("permission", safe(zone.getPermission()));
         return metadata;
+    }
+
+    /** Adds the shared world/x/y/z location keys (block coordinates) when a location is known. */
+    public static void putLocation(Map<String, Object> metadata, Location location) {
+        if (metadata == null || location == null) return;
+        metadata.put("world", location.getWorld() == null ? "unknown" : safe(location.getWorld().getName()));
+        metadata.put("x", location.getBlockX());
+        metadata.put("y", location.getBlockY());
+        metadata.put("z", location.getBlockZ());
     }
 
     private static String safe(String value) {
