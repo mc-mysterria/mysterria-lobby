@@ -7,6 +7,7 @@ import net.kyori.adventure.title.Title;
 import net.mysterria.lobby.MysterriaLobby;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -17,6 +18,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -117,14 +121,54 @@ public class TeleportManager {
     }
 
     public void saveZones() {
+        trySaveZones();
+    }
+
+    /**
+     * Writes the zone file through a temporary file so a failed write never truncates it.
+     *
+     * @return false if the file could not be written
+     */
+    public boolean trySaveZones() {
+        File temporaryFile = null;
         try {
-            config.save(configFile);
+            temporaryFile = File.createTempFile("teleport-zones-", ".yml", configFile.getParentFile());
+            config.save(temporaryFile);
+            try {
+                Files.move(temporaryFile.toPath(), configFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException ignored) {
+                Files.move(temporaryFile.toPath(), configFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            return true;
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save teleport zones: " + e.getMessage());
+            return false;
+        } finally {
+            if (temporaryFile != null) {
+                try {
+                    Files.deleteIfExists(temporaryFile.toPath());
+                } catch (IOException cleanupFailure) {
+                    plugin.getLogger().fine("Failed to remove temporary teleport zone file: "
+                            + cleanupFailure.getMessage());
+                }
+            }
         }
     }
 
     public void createZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
+        if (!tryCreateZone(id, serverName, pos1, pos2, delay, permission)) {
+            throw new IllegalStateException("Teleport zone '" + id + "' could not be created or saved");
+        }
+    }
+
+    /**
+     * Adds and persists a zone. Nothing changes in memory or on disk when this returns false.
+     *
+     * @return false if the id is already in use or the zone file could not be saved
+     */
+    public boolean tryCreateZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
         if (!pos1.getWorld().equals(pos2.getWorld())) {
             throw new IllegalArgumentException("Both positions must be in the same world");
         }
@@ -134,32 +178,76 @@ public class TeleportManager {
                 pos2.getX(), pos2.getY(), pos2.getZ(),
                 delay, permission);
 
-        zones.put(id, zone);
+        String configSnapshot = config.saveToString();
+        if (zones.putIfAbsent(id, zone) != null) {
+            return false;
+        }
 
-        ConfigurationSection zoneSection = config.createSection("zones." + id);
-        zoneSection.set("server", serverName);
-        zoneSection.set("world", pos1.getWorld().getName());
+        try {
+            config.set("zones." + id, null);
+            writeZoneConfig(zone);
+            if (trySaveZones()) {
+                return true;
+            }
+        } catch (RuntimeException failure) {
+            zones.remove(id, zone);
+            restoreConfig(configSnapshot);
+            throw failure;
+        }
+
+        zones.remove(id, zone);
+        restoreConfig(configSnapshot);
+        return false;
+    }
+
+    public boolean deleteZone(String id) {
+        TeleportZone zone = zones.get(id);
+        if (zone != null) {
+            String configSnapshot = config.saveToString();
+            if (!zones.remove(id, zone)) {
+                return false;
+            }
+            try {
+                config.set("zones." + id, null);
+                if (trySaveZones()) {
+                    return true;
+                }
+            } catch (RuntimeException failure) {
+                zones.put(id, zone);
+                restoreConfig(configSnapshot);
+                throw failure;
+            }
+
+            zones.put(id, zone);
+            restoreConfig(configSnapshot);
+        }
+        return false;
+    }
+
+    private void writeZoneConfig(TeleportZone zone) {
+        ConfigurationSection zoneSection = config.createSection("zones." + zone.getId());
+        zoneSection.set("server", zone.getServerName());
+        zoneSection.set("world", zone.getWorld().getName());
         zoneSection.set("region.min.x", zone.getMinX());
         zoneSection.set("region.min.y", zone.getMinY());
         zoneSection.set("region.min.z", zone.getMinZ());
         zoneSection.set("region.max.x", zone.getMaxX());
         zoneSection.set("region.max.y", zone.getMaxY());
         zoneSection.set("region.max.z", zone.getMaxZ());
-        zoneSection.set("delay", delay);
-        if (!permission.isEmpty()) {
-            zoneSection.set("permission", permission);
+        zoneSection.set("delay", zone.getDelay());
+        if (!zone.getPermission().isEmpty()) {
+            zoneSection.set("permission", zone.getPermission());
         }
-
-        saveZones();
     }
 
-    public boolean deleteZone(String id) {
-        if (zones.remove(id) != null) {
-            config.set("zones." + id, null);
-            saveZones();
-            return true;
+    private void restoreConfig(String serializedConfig) {
+        YamlConfiguration restored = new YamlConfiguration();
+        try {
+            restored.loadFromString(serializedConfig);
+            config = restored;
+        } catch (InvalidConfigurationException failure) {
+            throw new IllegalStateException("Failed to restore teleport zone configuration", failure);
         }
-        return false;
     }
 
     public void checkPlayerZone(Player player) {
@@ -215,9 +303,12 @@ public class TeleportManager {
             public void run() {
 
                 if (countdown <= 0) {
-                    teleportToServer(player, zone.getServerName());
-                    teleportTasks.remove(player.getUniqueId()); // Clean up task reference
-                    cancel();
+                    try {
+                        teleportToServer(player, zone.getServerName());
+                    } finally {
+                        teleportTasks.remove(player.getUniqueId());
+                        cancel();
+                    }
                     return;
                 }
 
