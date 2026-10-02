@@ -175,7 +175,16 @@ public class TeleportManager {
         plugin.getLogger().info("Loaded " + zones.size() + " teleport zones");
     }
 
-    public boolean saveZones() {
+    public void saveZones() {
+        trySaveZones();
+    }
+
+    /**
+     * Writes the zone file through a temporary file so a failed write never truncates it.
+     *
+     * @return false if the file could not be written
+     */
+    public boolean trySaveZones() {
         File temporaryFile = null;
         try {
             temporaryFile = File.createTempFile("teleport-zones-", ".yml", configFile.getParentFile());
@@ -203,7 +212,18 @@ public class TeleportManager {
         }
     }
 
-    public boolean createZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
+    public void createZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
+        if (!tryCreateZone(id, serverName, pos1, pos2, delay, permission)) {
+            throw new IllegalStateException("Teleport zone '" + id + "' could not be created or saved");
+        }
+    }
+
+    /**
+     * Adds and persists a zone. Nothing changes in memory or on disk when this returns false.
+     *
+     * @return false if the id is already in use or the zone file could not be saved
+     */
+    public boolean tryCreateZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
         if (!pos1.getWorld().equals(pos2.getWorld())) {
             throw new IllegalArgumentException("Both positions must be in the same world");
         }
@@ -221,7 +241,7 @@ public class TeleportManager {
         try {
             config.set("zones." + id, null);
             writeZoneConfig(zone);
-            if (saveZones()) {
+            if (trySaveZones()) {
                 return true;
             }
         } catch (RuntimeException failure) {
@@ -244,7 +264,7 @@ public class TeleportManager {
             }
             try {
                 config.set("zones." + id, null);
-                if (saveZones()) {
+                if (trySaveZones()) {
                     return true;
                 }
             } catch (RuntimeException failure) {

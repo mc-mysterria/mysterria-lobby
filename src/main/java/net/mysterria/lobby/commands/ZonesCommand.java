@@ -89,7 +89,7 @@ public class ZonesCommand {
 
         boolean committed = false;
         try {
-            if (!plugin.getTeleportManager().createZone(id, serverName, pos1, pos2, delay, permission)) {
+            if (!plugin.getTeleportManager().tryCreateZone(id, serverName, pos1, pos2, delay, permission)) {
                 emitZoneAdminFailed("created", id, player, "save_failed", null);
                 player.sendMessage(miniMessage.deserialize("<red>❌ Failed to save teleport zone '<yellow>" + id + "</yellow>'!</red>"));
                 return;
