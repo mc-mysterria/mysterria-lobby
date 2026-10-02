@@ -84,7 +84,10 @@ public class ZonesCommand {
         }
 
         try {
-            plugin.getTeleportManager().createZone(id, serverName, pos1, pos2, delay, permission);
+            if (!plugin.getTeleportManager().tryCreateZone(id, serverName, pos1, pos2, delay, permission)) {
+                player.sendMessage(miniMessage.deserialize("<red>❌ Failed to save teleport zone '<yellow>" + id + "</yellow>'!</red>"));
+                return;
+            }
             firstPositions.remove(player.getUniqueId());
 
             player.sendMessage(miniMessage.deserialize("<gradient:#00d4ff:#0099cc>🎉 Teleport zone '<white>" + id + "</white>' created successfully!</gradient>"));
