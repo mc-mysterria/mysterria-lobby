@@ -1,8 +1,8 @@
 package net.mysterria.lobby.domain.player;
 
-import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.mysterria.lobby.util.ItemBuilder;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;

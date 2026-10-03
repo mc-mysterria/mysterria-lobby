@@ -1,12 +1,12 @@
 package net.mysterria.lobby.commands;
 
 import dev.rollczi.litecommands.annotations.argument.Arg;
-import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import dev.rollczi.litecommands.annotations.command.Command;
 import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.description.Description;
 import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.permission.Permission;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
 import net.mysterria.lobby.audit.MysterriaAuditEmitter;

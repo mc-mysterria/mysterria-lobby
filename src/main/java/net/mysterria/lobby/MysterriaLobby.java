@@ -1,9 +1,8 @@
 package net.mysterria.lobby;
 
-import net.mysterria.lobby.audit.MysterriaAuditEmitter;
-
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.mysterria.lobby.commands.LobbyCommands;
 import net.mysterria.lobby.commands.RulesCommand;
 import net.mysterria.lobby.commands.ZonesCommand;
@@ -107,7 +106,6 @@ public final class MysterriaLobby extends JavaPlugin {
         reload(null);
     }
 
-    /** @param actorId staff player who requested the reload, or {@code null} for console */
     public void reload(UUID actorId) {
         configManager.reload();
         langManager.reload();

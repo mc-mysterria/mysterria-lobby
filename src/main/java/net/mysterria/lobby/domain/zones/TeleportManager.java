@@ -2,11 +2,11 @@ package net.mysterria.lobby.domain.zones;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import net.mysterria.lobby.MysterriaLobby;
 import net.mysterria.lobby.audit.MysterriaAuditEmitter;
-import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
@@ -20,19 +20,16 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.Files;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TeleportManager {
 
-    /**
-     * Outgoing plugin channel carrying the transfer correlation ID. Payload layout is
-     * documented in docs/AUDIT_EVENTS.md ("Transfer correlation forwarding").
-     */
+    /** Payload layout: docs/AUDIT_EVENTS.md ("Transfer correlation forwarding"). */
     public static final String TRANSFER_CHANNEL = "mysterria:transfer";
     private static final int TRANSFER_PAYLOAD_VERSION = 1;
 
@@ -87,7 +84,6 @@ public class TeleportManager {
         reload(null);
     }
 
-    /** Reloads zones from disk and audits every zone definition the reload changed. */
     public void reload(UUID actorId) {
         Map<String, Map<String, Object>> previous = snapshotZoneMetadata();
         zones.clear();
@@ -453,14 +449,9 @@ public class TeleportManager {
     }
 
     /**
-     * Best-effort hand-off of the transfer correlation ID ahead of the Connect request.
-     * The payload is routed to the destination backend through the proxy's BungeeCord
-     * {@code Forward} sub-channel (sub-channel name {@code mysterria:transfer}), which both
-     * BungeeCord and Velocity handle natively. It is additionally sent directly on
-     * {@code mysterria:transfer} when the connection registered that channel.
-     * A failure here must never prevent the transfer itself.
-     *
-     * @return the routes the payload was handed to ({@code bungeecord_forward}, {@code direct_channel})
+     * Must run before Connect and must never prevent the transfer. {@code Forward} is used because
+     * BungeeCord and Velocity both route it to the destination backend natively; Paper drops the
+     * direct channel unless the connection registered it.
      */
     private List<String> forwardTransferCorrelation(Player player, String serverName, TransferContext context) {
         List<String> routes = new ArrayList<>(2);
@@ -507,7 +498,6 @@ public class TeleportManager {
         }
     }
 
-    /** Emits transfer.cancelled; the location is omitted when the player is already offline. */
     private static void emitCancelled(TransferContext context, UUID playerId, Location location) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("source", context.source());
@@ -550,7 +540,6 @@ public class TeleportManager {
         return toggleBypass(playerUuid, null);
     }
 
-    /** @param actorLocation the staff player's location for the audit row, or {@code null} if unknown */
     public boolean toggleBypass(UUID playerUuid, Location actorLocation) {
         boolean enabled = !bypassPlayers.remove(playerUuid);
         if (enabled) {
@@ -580,12 +569,10 @@ public class TeleportManager {
         return toggleSeaEffect(zoneId, null);
     }
 
-    /** Toggles the runtime sea boundary display and audits the change as a zone update. */
     public boolean toggleSeaEffect(String zoneId, UUID actorId) {
         return toggleSeaEffect(zoneId, actorId, null);
     }
 
-    /** @param actorLocation the staff player's location for the audit row, or {@code null} if unknown */
     public boolean toggleSeaEffect(String zoneId, UUID actorId, Location actorLocation) {
         if (!zones.containsKey(zoneId)) {
             return false;

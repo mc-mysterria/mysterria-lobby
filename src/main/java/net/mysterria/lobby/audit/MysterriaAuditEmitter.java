@@ -8,15 +8,12 @@ import net.mysterria.lobby.domain.zones.TeleportZone;
 import org.bukkit.Location;
 import org.bukkit.plugin.java.JavaPlugin;
 
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
-/** Best-effort bridge to the optional shared Mysterria audit ledger. */
 public final class MysterriaAuditEmitter {
     private static final String NAMESPACE = "mysterria-lobby.";
 
@@ -27,7 +24,6 @@ public final class MysterriaAuditEmitter {
     private MysterriaAuditEmitter() {
     }
 
-    /** Creates the producer; any failure logs a warning and leaves auditing a no-op. */
     public static void initialize(JavaPlugin plugin) {
         logger = plugin.getLogger();
         try {
@@ -56,10 +52,7 @@ public final class MysterriaAuditEmitter {
         if (current != null) current.log(Level.WARNING, message, failure);
     }
 
-    /**
-     * Emits without waiting for persistence. Missing or failing audit infrastructure
-     * never change lobby behavior or gate the authoritative mutation.
-     */
+    // Never blocks on persistence; a missing or failing audit client must not affect lobby behaviour.
     private static void emit(String event, AuditOutcome outcome,
                              AuditRisk risk, UUID correlationId, String businessId,
                              UUID actorId, UUID subjectId, UUID targetId, String reason,
@@ -131,7 +124,6 @@ public final class MysterriaAuditEmitter {
                 AuditPrivacy.STAFF_RESTRICTED, values);
     }
 
-    /** Stable, bounded description of a zone definition used by zone audit rows. */
     public static Map<String, Object> zoneMetadata(TeleportZone zone) {
         if (zone == null) return Map.of();
         Map<String, Object> metadata = new LinkedHashMap<>();
@@ -149,7 +141,6 @@ public final class MysterriaAuditEmitter {
         return metadata;
     }
 
-    /** Adds the shared world/x/y/z location keys (block coordinates) when a location is known. */
     public static void putLocation(Map<String, Object> metadata, Location location) {
         if (metadata == null || location == null) return;
         metadata.put("world", location.getWorld() == null ? "unknown" : safe(location.getWorld().getName()));

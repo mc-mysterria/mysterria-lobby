@@ -1,81 +1,18 @@
 # MysterriaLobby audit events
 
-MysterriaLobby emits best-effort events through its shaded neutral audit client. Events distinguish transfer attempts, local state changes, and observable BungeeCord dispatch; dispatch does not prove arrival on another server.
+Rows are written best-effort by the shaded audit client to `plugins/mysterria-audit-spool` and ingested by the optional per-server audit engine. Event types are prefixed `mysterria-lobby.`; all rows are `STAFF_RESTRICTED`. Actor locations are block `world`/`x`/`y`/`z` when known.
 
-The optional per-server audit engine owns SQLite and local staff searches. Each producer writes to its own bounded spool directory even when the engine is absent. Existing gameplay dependencies remain separate from audit transport.
-
-## Event catalog
-
-| Event type | Outcome | Commit/observation point | Identifiers |
-| --- | --- | --- | --- |
-| `mysterria-lobby.transfer.requested` | `ATTEMPTED` | A zone countdown is scheduled or an explicit server transfer is dispatched | `business_id=transfer:<correlation UUID>`, actor/subject are the player; all `requested` and `dispatched` rows carry the player's block location as `world`, `x`, `y`, `z` (`cancelled` rows for players who already went offline omit them) |
-| `mysterria-lobby.transfer.dispatched` | `OBSERVED` | BungeeCord `Connect` plugin message is sent; remote connection completion is not observable here | Same correlation and business ID as the request; metadata `correlation_forwarded` reports whether the correlation payload was handed to the player connection on at least one route; `forward_routes` is a comma-separated list of `bungeecord_forward` (proxy `Forward` to the destination server) and `direct_channel` (direct `mysterria:transfer` message, only when the connection registered that channel) |
-| `mysterria-lobby.transfer.cancelled` | `CANCELLED` | A scheduled countdown task is cancelled (reload, quit, or explicit cancellation) | Same correlation and business ID as the request; `world`/`x`/`y`/`z` when the player is still online; `server=unknown` with `reason=malformed_zone` when the zone had no server name |
-| `mysterria-lobby.visibility.preference_changed` | `COMMITTED` | Player visibility preference is written to the persistent data container | `business_id=visibility:<player UUID>`, actor/subject are the player; metadata carries the player's `world`/`x`/`y`/`z` |
-| `mysterria-lobby.zone.created` | `COMMITTED` | Zone is registered and `teleport-zones.yml` is saved; `FAILED` (`reason=save_failed` or `exception`, plus `failure_type`) when registration or the save fails | `business_id=zone:<zone ID>`, actor is the staff player |
-| `mysterria-lobby.zone.deleted` | `COMMITTED` | Zone is removed and `teleport-zones.yml` is saved; `FAILED` (`reason=save_failed` or `exception`) when removal or the save fails | Same stable zone business ID, actor is the staff player |
-| `mysterria-lobby.zone.updated` | `COMMITTED` | `/lobby reload` re-read `teleport-zones.yml` and a zone definition was added, removed, or modified compared to the previous in-memory set (one row per changed zone, none when nothing changed) | Same stable zone business ID; actor is the staff player who ran the reload (absent for console); all rows from one reload share a correlation UUID; metadata adds `source=reload`, `change` (`added`/`removed`/`modified`) and, for `modified`, `changed_fields`. `/tpzone togglesea` also emits `zone.updated` after flipping the runtime sea boundary display (not persisted), with a fresh correlation UUID, actor the staff player, `source=togglesea`, `change=sea_effect_toggled`, `changed_fields=sea_effect` and `sea_effect` (new state) |
-| `mysterria-lobby.staff.bypass_toggled` | `COMMITTED` | `/tpzone bypass` flipped the in-memory teleport-zone bypass flag (not persisted; cleared on quit without a row) | `business_id=bypass:<player UUID>`, actor/subject are the staff player; metadata `bypass=teleport_zone`, `enabled` (new state), and the staff player's `world`/`x`/`y`/`z` |
-
-Transfer events use one operation correlation UUID across the requested,
-dispatched, and cancelled lifecycle. Zone, bypass, and preference commands receive a new
-correlation UUID for each committed operation (a reload shares one UUID across
-its `zone.updated` rows). Metadata keys are snake_case and
-bounded before emission; zone metadata includes server, `zone_world`, bounds, delay,
-and permission. Zone rows (`created`, `deleted`, `updated`) also carry the acting
-staff player's block location as `world`, `x`, `y`, `z` when that player is online
-(absent for console reloads). No chat text, player names, movement, routine spawn/void
-teleports, GUI previews, particles, debug rendering, action bars, or world
-protection checks are audited.
+| Event type | Outcome(s) | Key facts |
+| --- | --- | --- |
+| `transfer.requested` | `ATTEMPTED` | Zone countdown scheduled or manual transfer; `business_id=transfer:<correlation UUID>`, `source` (`zone`/`manual`), `server`, `zone_id`, `delay_seconds` |
+| `transfer.dispatched` | `OBSERVED`, `FAILED` | BungeeCord `Connect` sent (arrival not proven); same correlation; `correlation_forwarded`, `forward_routes` (`bungeecord_forward`, `direct_channel`); `FAILED` with `reason=bungeecord_dispatch_failed`, `failure_type` |
+| `transfer.cancelled` | `CANCELLED` | Countdown cancelled (reload, quit, cancel, shutdown); `reason=teleport_task_cancelled` or `malformed_zone`; no location when the player is offline |
+| `visibility.preference_changed` | `COMMITTED` | `business_id=visibility:<player UUID>`; `preference=players_visible`, `previous`, `value` |
+| `zone.created` | `COMMITTED`, `FAILED` | Saved to `teleport-zones.yml`; `business_id=zone:<zone ID>`, zone metadata (`server`, `zone_world`, bounds, `delay_seconds`, `permission`); `FAILED` with `reason=save_failed` or `exception` + `failure_type` |
+| `zone.deleted` | `COMMITTED`, `FAILED` | Same as `zone.created` for removal |
+| `zone.updated` | `COMMITTED` | `source=reload` (one row per changed zone, shared correlation, `change`=`added`/`removed`/`modified`, `changed_fields`) or `source=togglesea` (`changed_fields=sea_effect`, `sea_effect`) |
+| `staff.bypass_toggled` | `COMMITTED` | `business_id=bypass:<player UUID>`; `bypass=teleport_zone`, `enabled` |
 
 ## Transfer correlation forwarding
 
-Immediately before the BungeeCord `Connect` message, the lobby hands the transfer
-correlation payload to the proxy so the destination server can link its arrival
-audit row to the lobby's transfer lifecycle. Payload (Java `DataOutput` encoding,
-as written by Guava `ByteArrayDataOutput`):
-
-| Order | Type | Field | Notes |
-| --- | --- | --- | --- |
-| 1 | `byte` | payload version | Currently `1`; reject or ignore unknown versions |
-| 2 | `UTF` (modified UTF-8, 2-byte length prefix) | correlation UUID | Canonical `UUID.toString()` form; equals the `correlation_id` of the lobby `transfer.*` rows, and `business_id` is `transfer:<correlation UUID>` |
-| 3 | `UTF` | zone ID | Source teleport zone ID; empty string for manual transfers (`/tpzone teleport`, `[TELEPORT]` actions) |
-
-Routes:
-
-1. `bungeecord_forward` (always attempted): a `BungeeCord` channel message with
-   sub-channel `Forward`, target = destination server name, forwarded sub-channel
-   name `mysterria:transfer`, then a `short` payload length and the payload bytes.
-   BungeeCord and Velocity handle `Forward` natively and deliver it to the named
-   backend as a `BungeeCord` channel message containing `UTF "mysterria:transfer"`,
-   `short length`, payload. The proxy delivers it only if that backend currently
-   has at least one connected player (standard `Forward` semantics), so the first
-   player on an empty destination server gets no correlation.
-2. `direct_channel` (optional): the payload alone on channel `mysterria:transfer`,
-   sent only when the connection registered that channel via `minecraft:register`
-   (for example a proxy plugin that intercepts it). Paper drops plugin messages on
-   unregistered channels, and vanilla clients never register it.
-
-Delivery notes for the receiving side: the forwarded payload usually arrives
-before the player finishes joining the destination and carries no player UUID of
-its own, so receivers should buffer it briefly and match it to the next arrival
-from the lobby (the zone ID and arrival time narrow the match). A missing message means only that correlation is unavailable;
-the transfer is unaffected. A forwarding failure is logged at `FINE` and never
-blocks the `Connect` dispatch. A receiving server can read it with:
-
-```java
-// Register an incoming listener on "BungeeCord" (and "mysterria:transfer" for the direct route).
-DataInputStream wrapper = new DataInputStream(new ByteArrayInputStream(bungeeMessage));
-if (!"mysterria:transfer".equals(wrapper.readUTF())) return;
-byte[] message = new byte[wrapper.readShort()];
-wrapper.readFully(message);
-
-DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
-int version = in.readUnsignedByte();          // 1
-UUID correlationId = UUID.fromString(in.readUTF());
-String zoneId = in.readUTF();                 // "" for manual transfers
-```
-
-The ledger is an optional observer. Its absence or a queue/write failure must
-never block or roll back lobby persistence, transfer dispatch, or player
-visibility behavior.
+Before `Connect`, the lobby sends the payload `byte version (1)`, `UTF correlation UUID`, `UTF zone ID` (empty for manual) via BungeeCord `Forward` to the destination server under sub-channel `mysterria:transfer` (short length prefix), and directly on `mysterria:transfer` when the connection registered that channel.
