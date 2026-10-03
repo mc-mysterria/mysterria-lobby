@@ -2,6 +2,7 @@ package net.mysterria.lobby;
 
 import dev.rollczi.litecommands.LiteCommands;
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.mysterria.lobby.commands.LobbyCommands;
 import net.mysterria.lobby.commands.RulesCommand;
 import net.mysterria.lobby.commands.ZonesCommand;
@@ -20,6 +21,8 @@ import net.mysterria.lobby.gui.GuiManager;
 import net.mysterria.lobby.listeners.*;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
 
 public final class MysterriaLobby extends JavaPlugin {
 
@@ -44,6 +47,7 @@ public final class MysterriaLobby extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        MysterriaAuditEmitter.initialize(this);
         instance = this;
         saveDefaultConfig();
 
@@ -70,11 +74,15 @@ public final class MysterriaLobby extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (liteCommands != null) liteCommands.unregister();
-        if (teleportManager != null) teleportManager.cancelAllTeleports();
-        if (actionBarManager != null) actionBarManager.stop();
-        if (announcementManager != null) announcementManager.stop();
-        if (bossBarManager != null) bossBarManager.stop();
+        try {
+            if (liteCommands != null) liteCommands.unregister();
+            if (teleportManager != null) teleportManager.cancelAllTeleports();
+            if (actionBarManager != null) actionBarManager.stop();
+            if (announcementManager != null) announcementManager.stop();
+            if (bossBarManager != null) bossBarManager.stop();
+        } finally {
+            MysterriaAuditEmitter.close();
+        }
         getLogger().info("MysterriaLobby has been disabled!");
     }
 
@@ -95,10 +103,14 @@ public final class MysterriaLobby extends JavaPlugin {
     }
 
     public void reload() {
+        reload(null);
+    }
+
+    public void reload(UUID actorId) {
         configManager.reload();
         langManager.reload();
         guiManager.reload();
-        teleportManager.reload();
+        teleportManager.reload(actorId);
         playerVisibilityManager.reload();
         worldProtectionManager.reload();
         spawnManager.reload();

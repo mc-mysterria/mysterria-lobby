@@ -6,8 +6,10 @@ import dev.rollczi.litecommands.annotations.context.Context;
 import dev.rollczi.litecommands.annotations.description.Description;
 import dev.rollczi.litecommands.annotations.execute.Execute;
 import dev.rollczi.litecommands.annotations.permission.Permission;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import net.mysterria.lobby.domain.zones.TeleportZone;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -17,9 +19,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
 
 @Command(name = "teleportzone", aliases = {"tpzone", "zone"})
 @Permission("mysterria.lobby.teleport")
@@ -83,12 +87,16 @@ public class ZonesCommand {
             return;
         }
 
+        boolean committed = false;
         try {
             if (!plugin.getTeleportManager().tryCreateZone(id, serverName, pos1, pos2, delay, permission)) {
+                emitZoneAdminFailed("created", id, player, "save_failed", null);
                 player.sendMessage(miniMessage.deserialize("<red>❌ Failed to save teleport zone '<yellow>" + id + "</yellow>'!</red>"));
                 return;
             }
             firstPositions.remove(player.getUniqueId());
+            committed = true;
+            emitZoneAdmin("created", id, player, plugin.getTeleportManager().getZone(id));
 
             player.sendMessage(miniMessage.deserialize("<gradient:#00d4ff:#0099cc>🎉 Teleport zone '<white>" + id + "</white>' created successfully!</gradient>"));
             player.sendMessage(miniMessage.deserialize("<gray>→ Server: <yellow>" + serverName + "</yellow></gray>"));
@@ -98,6 +106,7 @@ public class ZonesCommand {
             }
 
         } catch (Exception e) {
+            if (!committed) emitZoneAdminFailed("created", id, player, "exception", e);
             player.sendMessage(miniMessage.deserialize("<red>❌ Failed to create teleport zone: " + e.getMessage() + "</red>"));
         }
     }
@@ -110,9 +119,19 @@ public class ZonesCommand {
             return;
         }
 
-        if (plugin.getTeleportManager().deleteZone(id)) {
+        TeleportZone zone = plugin.getTeleportManager().getZone(id);
+        boolean deleted;
+        try {
+            deleted = plugin.getTeleportManager().deleteZone(id);
+        } catch (RuntimeException failure) {
+            emitZoneAdminFailed("deleted", id, player, "exception", failure);
+            throw failure;
+        }
+        if (deleted) {
+            emitZoneAdmin("deleted", id, player, zone);
             player.sendMessage(miniMessage.deserialize("<gradient:#ff6b6b:#ee5a52>🗑️ Teleport zone '<white>" + id + "</white>' deleted successfully!</gradient>"));
         } else {
+            emitZoneAdminFailed("deleted", id, player, "save_failed", null);
             player.sendMessage(miniMessage.deserialize("<red>❌ Failed to delete teleport zone '<yellow>" + id + "</yellow>'!</red>"));
         }
     }
@@ -187,7 +206,7 @@ public class ZonesCommand {
             return;
         }
 
-        boolean isEnabled = plugin.getTeleportManager().toggleSeaEffect(zone.getId());
+        boolean isEnabled = plugin.getTeleportManager().toggleSeaEffect(zone.getId(), player.getUniqueId(), player.getLocation());
 
         if (isEnabled) {
             player.sendMessage(plugin.getLangManager().getLocalizedComponent(player, "teleport.sea_enabled").replaceText(builder -> builder.match("%zone%").replacement(zone.getId())));
@@ -232,7 +251,7 @@ public class ZonesCommand {
     @Execute(name = "bypass")
     @Description("Toggle teleport bypass — enter zones without being teleported (for setup)")
     public void bypass(@Context Player player) {
-        boolean isBypassing = plugin.getTeleportManager().toggleBypass(player.getUniqueId());
+        boolean isBypassing = plugin.getTeleportManager().toggleBypass(player.getUniqueId(), player.getLocation());
         if (isBypassing) {
             player.sendMessage(miniMessage.deserialize("<yellow>⚠️ Teleport bypass <green>enabled</green>. Entering zones will show info but not teleport you."));
         } else {
@@ -339,6 +358,29 @@ public class ZonesCommand {
             recipient.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data);
         } else {
             world.spawnParticle(particle, x, y, z, count, offsetX, offsetY, offsetZ, speed, data);
+        }
+    }
+
+    private void emitZoneAdmin(String event, String zoneId, Player actor, TeleportZone zone) {
+        emitZoneAdmin(event, AuditOutcome.COMMITTED, zoneId, actor, null, zone, null);
+    }
+
+    private void emitZoneAdminFailed(String event, String zoneId, Player actor, String reason, Exception failure) {
+        emitZoneAdmin(event, AuditOutcome.FAILED, zoneId, actor, reason,
+                plugin.getTeleportManager().getZone(zoneId), failure);
+    }
+
+    private void emitZoneAdmin(String event, AuditOutcome outcome, String zoneId, Player actor,
+                               String reason, TeleportZone zone, Exception failure) {
+        try {
+            Map<String, Object> values = new LinkedHashMap<>(MysterriaAuditEmitter.zoneMetadata(zone));
+            values.putIfAbsent("zone_id", zoneId == null ? "" : zoneId);
+            if (failure != null) values.put("failure_type", failure.getClass().getSimpleName());
+            MysterriaAuditEmitter.putLocation(values, actor.getLocation());
+            MysterriaAuditEmitter.emitZoneAdmin(event, outcome, UUID.randomUUID(), zoneId,
+                    actor.getUniqueId(), reason, values);
+        } catch (RuntimeException | LinkageError auditFailure) {
+            plugin.getLogger().log(Level.WARNING, "Mysterria zone audit metadata was unavailable", auditFailure);
         }
     }
 }
