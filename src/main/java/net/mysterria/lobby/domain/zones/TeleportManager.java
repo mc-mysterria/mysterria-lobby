@@ -2,9 +2,11 @@ package net.mysterria.lobby.domain.zones;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -31,6 +33,7 @@ public class TeleportManager {
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Map<String, TeleportZone> zones = new ConcurrentHashMap<>();
     private final Map<UUID, BukkitTask> teleportTasks = new ConcurrentHashMap<>();
+    private final Map<UUID, TransferContext> transferContexts = new ConcurrentHashMap<>();
     private final Map<UUID, String> playerZones = new ConcurrentHashMap<>();
     private final Map<String, BukkitTask> seaEffectTasks = new ConcurrentHashMap<>();
     private final Set<String> zonesWithSeaEffect = new HashSet<>();
@@ -73,10 +76,57 @@ public class TeleportManager {
     }
 
     public void reload() {
+        reload(null);
+    }
+
+    public void reload(UUID actorId) {
+        reload(actorId, null, null);
+    }
+
+    public void reload(UUID actorId, String actorName, UUID correlationId) {
+        Map<String, Map<String, Object>> previous = snapshotZoneMetadata();
         zones.clear();
         cancelAllTeleports();
         config = YamlConfiguration.loadConfiguration(configFile);
         loadZones();
+        emitReloadedZoneChanges(previous, actorId, actorName, correlationId);
+    }
+
+    private Map<String, Map<String, Object>> snapshotZoneMetadata() {
+        Map<String, Map<String, Object>> snapshot = new HashMap<>();
+        zones.forEach((id, zone) -> snapshot.put(id, MysterriaAuditEmitter.zoneMetadata(zone)));
+        return snapshot;
+    }
+
+    private void emitReloadedZoneChanges(Map<String, Map<String, Object>> previous, UUID actorId,
+                                         String actorName, UUID reloadCorrelationId) {
+        Map<String, Map<String, Object>> current = snapshotZoneMetadata();
+        Set<String> ids = new TreeSet<>(previous.keySet());
+        ids.addAll(current.keySet());
+        UUID correlationId = reloadCorrelationId == null ? UUID.randomUUID() : reloadCorrelationId;
+        for (String id : ids) {
+            Map<String, Object> before = previous.get(id);
+            Map<String, Object> after = current.get(id);
+            if (Objects.equals(before, after)) continue;
+            emitZoneUpdated(correlationId, id, actorId, actorName, before, after);
+        }
+    }
+
+    private void emitZoneUpdated(UUID correlationId, String zoneId, UUID actorId, String actorName,
+                                 Map<String, Object> before, Map<String, Object> after) {
+        Map<String, Object> values = new LinkedHashMap<>(after == null ? before : after);
+        values.put("zone_id", zoneId);
+        values.put("source", "reload");
+        MysterriaAuditEmitter.putActorName(values, actorId, actorName);
+        values.put("change", before == null ? "added" : after == null ? "removed" : "modified");
+        if (before != null && after != null) {
+            List<String> changed = new ArrayList<>();
+            after.forEach((key, value) -> {
+                if (!Objects.equals(before.get(key), value)) changed.add(key);
+            });
+            values.put("changed_fields", String.join(",", changed));
+        }
+        MysterriaAuditEmitter.emitZoneAdmin("updated", correlationId, zoneId, actorId, values);
     }
 
     private void loadZones() {
@@ -229,6 +279,7 @@ public class TeleportManager {
 
         cancelTeleport(player);
 
+        TransferContext context = TransferContext.create(zone.getId(), zone.getServerName());
         PotionEffect slowFall = new PotionEffect(PotionEffectType.SLOW_FALLING, (zone.getDelay() + 5) * 20, 0, false, false);
         PotionEffect nausea = new PotionEffect(PotionEffectType.NAUSEA, (zone.getDelay() + 5) * 20, 0, false, false);
         player.addPotionEffect(slowFall);
@@ -246,8 +297,9 @@ public class TeleportManager {
 
                 if (countdown <= 0) {
                     teleportTasks.remove(player.getUniqueId()); // Clean up task reference
+                    transferContexts.remove(player.getUniqueId(), context);
                     cancel();
-                    teleportToServer(player, zone.getServerName());
+                    teleportToServer(player, zone.getServerName(), context);
                     return;
                 }
 
@@ -257,6 +309,12 @@ public class TeleportManager {
         }.runTaskTimer(plugin, 0L, 20L);
 
         teleportTasks.put(player.getUniqueId(), task);
+        transferContexts.put(player.getUniqueId(), context);
+        Map<String, Object> requested = transferMetadata(player, "zone", zone.getServerName());
+        requested.put("zone_id", zone.getId());
+        requested.put("delay_seconds", zone.getDelay());
+        MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
+                context.correlationId(), context.businessId(), player.getUniqueId(), null, requested);
     }
 
     private void showCountdownEffects(Player player, int countdown, String serverName) {
@@ -276,6 +334,14 @@ public class TeleportManager {
     }
 
     public void teleportToServer(Player player, String serverName) {
+        TransferContext context = TransferContext.create(null, serverName);
+        MysterriaAuditEmitter.emitTransfer("requested", AuditOutcome.ATTEMPTED,
+                context.correlationId(), context.businessId(), player.getUniqueId(), null,
+                transferMetadata(player, "manual", serverName));
+        teleportToServer(player, serverName, context);
+    }
+
+    private void teleportToServer(Player player, String serverName, TransferContext context) {
         Location loc = player.getLocation();
         player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, loc, 20, 1, 1, 1, 0.1);
         player.getWorld().spawnParticle(Particle.END_ROD, loc, 15, 0.5, 1, 0.5, 0.1);
@@ -292,19 +358,58 @@ public class TeleportManager {
         out.writeUTF("Connect");
         out.writeUTF(serverName);
 
-        player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+        try {
+            player.sendPluginMessage(plugin, "BungeeCord", out.toByteArray());
+            Map<String, Object> metadata = transferMetadata(player, context.source(), serverName);
+            metadata.put("observed_via", "bungeecord_connect_dispatch");
+            MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.OBSERVED,
+                    context.correlationId(), context.businessId(), player.getUniqueId(), null,
+                    metadata);
+        } catch (RuntimeException failure) {
+            Map<String, Object> metadata = transferMetadata(player, context.source(), serverName);
+            metadata.put("failure_type", failure.getClass().getSimpleName());
+            MysterriaAuditEmitter.emitTransfer("dispatched", AuditOutcome.FAILED,
+                    context.correlationId(), context.businessId(), player.getUniqueId(),
+                    "bungeecord_dispatch_failed", metadata);
+            throw failure;
+        }
+    }
+
+    private static Map<String, Object> transferMetadata(Player player, String source, String serverName) {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("source", source);
+        metadata.put("server", serverName);
+        MysterriaAuditEmitter.putLocation(metadata, player.getLocation());
+        return metadata;
     }
 
     public void cancelTeleport(Player player) {
         BukkitTask task = teleportTasks.remove(player.getUniqueId());
+        TransferContext context = transferContexts.remove(player.getUniqueId());
         if (task != null) {
             task.cancel();
         }
+        if (context != null) {
+            emitCancelled(context, player.getUniqueId(), player.getLocation());
+        }
+    }
+
+    private static void emitCancelled(TransferContext context, UUID playerId, Location location) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("source", context.source());
+        metadata.put("server", context.serverName() == null ? "unknown" : context.serverName());
+        metadata.put("zone_id", context.zoneId() == null ? "" : context.zoneId());
+        MysterriaAuditEmitter.putLocation(metadata, location);
+        String reason = context.serverName() == null ? "malformed_zone" : "teleport_task_cancelled";
+        MysterriaAuditEmitter.emitTransfer("cancelled", AuditOutcome.CANCELLED,
+                context.correlationId(), context.businessId(), playerId, reason, metadata);
     }
 
     public void cancelAllTeleports() {
         teleportTasks.values().forEach(BukkitTask::cancel);
         teleportTasks.clear();
+        transferContexts.forEach((playerId, context) -> emitCancelled(context, playerId, null));
+        transferContexts.clear();
         playerZones.clear();
         stopAllSeaEffects();
     }
@@ -316,12 +421,16 @@ public class TeleportManager {
     }
 
     public boolean toggleBypass(UUID playerUuid) {
-        if (bypassPlayers.contains(playerUuid)) {
-            bypassPlayers.remove(playerUuid);
-            return false;
+        return toggleBypass(playerUuid, null);
+    }
+
+    public boolean toggleBypass(UUID playerUuid, Location actorLocation) {
+        boolean enabled = !bypassPlayers.remove(playerUuid);
+        if (enabled) {
+            bypassPlayers.add(playerUuid);
         }
-        bypassPlayers.add(playerUuid);
-        return true;
+        MysterriaAuditEmitter.emitBypassToggled(UUID.randomUUID(), playerUuid, actorLocation, enabled);
+        return enabled;
     }
 
     public boolean isBypassing(UUID playerUuid) {
@@ -341,10 +450,25 @@ public class TeleportManager {
     }
 
     public boolean toggleSeaEffect(String zoneId) {
+        return toggleSeaEffect(zoneId, null, null);
+    }
+
+    public boolean toggleSeaEffect(String zoneId, UUID actorId, Location actorLocation) {
         if (!zones.containsKey(zoneId)) {
             return false;
         }
+        boolean enabled = applySeaEffectToggle(zoneId);
+        Map<String, Object> values = new LinkedHashMap<>(MysterriaAuditEmitter.zoneMetadata(zones.get(zoneId)));
+        values.put("source", "togglesea");
+        values.put("change", "sea_effect_toggled");
+        values.put("changed_fields", "sea_effect");
+        values.put("sea_effect", enabled);
+        MysterriaAuditEmitter.putLocation(values, actorLocation);
+        MysterriaAuditEmitter.emitZoneAdmin("updated", UUID.randomUUID(), zoneId, actorId, values);
+        return enabled;
+    }
 
+    private boolean applySeaEffectToggle(String zoneId) {
         if (zonesWithSeaEffect.contains(zoneId)) {
             zonesWithSeaEffect.remove(zoneId);
             BukkitTask task = seaEffectTasks.remove(zoneId);
@@ -438,5 +562,14 @@ public class TeleportManager {
 
     public boolean hasSeaEffect(String zoneId) {
         return zonesWithSeaEffect.contains(zoneId);
+    }
+
+    private record TransferContext(UUID correlationId, String businessId, String zoneId,
+                                   String serverName, String source) {
+        private static TransferContext create(String zoneId, String serverName) {
+            UUID correlationId = UUID.randomUUID();
+            return new TransferContext(correlationId, "transfer:" + correlationId,
+                    zoneId, serverName, zoneId == null ? "manual" : "zone");
+        }
     }
 }

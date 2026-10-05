@@ -13,6 +13,7 @@ java {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url "https://repo.panda-lang.org/releases" }
 
@@ -24,10 +25,19 @@ repositories {
         name = 'papermc-repo'
         url = 'https://repo.papermc.io/repository/maven-public/'
     }
+
+    maven {
+        url = 'https://nexus.mysterria.net/repository/plugin-public/'
+        content {
+            includeGroup('dev.ua.ikeepcalm')
+            includeGroup('dev.ua.ikeepcalm.mysterria')
+        }
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    implementation 'dev.ua.ikeepcalm.mysterria:audit-client:1.0.2'
     implementation("net.kyori:adventure-text-minimessage:5.0.0")
     implementation("dev.triumphteam:triumph-gui-paper:3.1.13")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
@@ -42,6 +52,11 @@ processResources {
 
 shadowJar {
     archiveClassifier = ''
+    relocate 'dev.ua.ikeepcalm.mysterria.audit', 'net.mysterria.lobby.libs.audit'
+}
+
+jar {
+    enabled = false
 }
 
 build {
