@@ -17,6 +17,10 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,17 +120,31 @@ public class TeleportManager {
         plugin.getLogger().info("Loaded " + zones.size() + " teleport zones");
     }
 
-    public void saveZones() {
+    public boolean saveZones() {
+        // Write beside the zones file and move it into place so a failed write never truncates it
+        Path target = configFile.toPath();
+        Path temporary = target.resolveSibling(configFile.getName() + ".tmp");
         try {
-            config.save(configFile);
+            Files.writeString(temporary, config.saveToString());
+            try {
+                Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+            return true;
         } catch (IOException e) {
             plugin.getLogger().severe("Failed to save teleport zones: " + e.getMessage());
+            return false;
         }
     }
 
-    public void createZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
+    public boolean tryCreateZone(String id, String serverName, Location pos1, Location pos2, int delay, String permission) {
         if (!pos1.getWorld().equals(pos2.getWorld())) {
             throw new IllegalArgumentException("Both positions must be in the same world");
+        }
+
+        if (zones.containsKey(id)) {
+            return false;
         }
 
         TeleportZone zone = new TeleportZone(id, serverName, pos1.getWorld(),
@@ -134,8 +152,7 @@ public class TeleportManager {
                 pos2.getX(), pos2.getY(), pos2.getZ(),
                 delay, permission);
 
-        zones.put(id, zone);
-
+        Object previous = config.get("zones." + id);
         ConfigurationSection zoneSection = config.createSection("zones." + id);
         zoneSection.set("server", serverName);
         zoneSection.set("world", pos1.getWorld().getName());
@@ -150,16 +167,29 @@ public class TeleportManager {
             zoneSection.set("permission", permission);
         }
 
-        saveZones();
+        if (!saveZones()) {
+            config.set("zones." + id, previous);
+            return false;
+        }
+
+        zones.put(id, zone);
+        return true;
     }
 
     public boolean deleteZone(String id) {
-        if (zones.remove(id) != null) {
-            config.set("zones." + id, null);
-            saveZones();
-            return true;
+        if (!zones.containsKey(id)) {
+            return false;
         }
-        return false;
+
+        Object previous = config.get("zones." + id);
+        config.set("zones." + id, null);
+        if (!saveZones()) {
+            config.set("zones." + id, previous);
+            return false;
+        }
+
+        zones.remove(id);
+        return true;
     }
 
     public void checkPlayerZone(Player player) {
@@ -215,9 +245,9 @@ public class TeleportManager {
             public void run() {
 
                 if (countdown <= 0) {
-                    teleportToServer(player, zone.getServerName());
                     teleportTasks.remove(player.getUniqueId()); // Clean up task reference
                     cancel();
+                    teleportToServer(player, zone.getServerName());
                     return;
                 }
 
