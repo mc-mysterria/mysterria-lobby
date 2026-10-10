@@ -1,6 +1,9 @@
 package net.mysterria.lobby.domain.spawn;
 
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditOutcome;
+import dev.ua.ikeepcalm.mysterria.audit.client.api.AuditRisk;
 import net.mysterria.lobby.MysterriaLobby;
+import net.mysterria.lobby.audit.MysterriaAuditEmitter;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -9,6 +12,10 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
 
 public class SpawnManager {
 
@@ -54,6 +61,11 @@ public class SpawnManager {
     }
 
     public void setSpawnLocation(Location location) {
+        setSpawnLocation(location, null, null);
+    }
+
+    public void setSpawnLocation(Location location, UUID actorId, String actorName) {
+        Location previousLocation = this.spawnLocation;
         this.spawnLocation = location;
 
         spawnConfig.set("spawn.world", location.getWorld().getName());
@@ -67,6 +79,26 @@ public class SpawnManager {
             spawnConfig.save(spawnFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Could not save spawn location: " + e.getMessage());
+            emitSpawnSet(AuditOutcome.FAILED, previousLocation, location, actorId, actorName, e);
+            return;
+        }
+        emitSpawnSet(AuditOutcome.COMMITTED, previousLocation, location, actorId, actorName, null);
+    }
+
+    // Built from the locations already in hand; the save above is synchronous, so this runs after it is confirmed.
+    private void emitSpawnSet(AuditOutcome outcome, Location previous, Location current,
+                              UUID actorId, String actorName, IOException failure) {
+        try {
+            Map<String, Object> values = new LinkedHashMap<>();
+            values.put("setting", "lobby_spawn");
+            values.put("previous_set", previous != null);
+            MysterriaAuditEmitter.putExactLocation(values, "previous_", previous);
+            MysterriaAuditEmitter.putExactLocation(values, "new_", current);
+            if (failure != null) values.put("failure_type", failure.getClass().getSimpleName());
+            MysterriaAuditEmitter.emitStaffAction("spawn_set", outcome, AuditRisk.NORMAL, UUID.randomUUID(),
+                    "spawn:lobby", actorId, actorName, failure == null ? null : "save_failed", values);
+        } catch (RuntimeException | LinkageError auditFailure) {
+            plugin.getLogger().log(Level.WARNING, "Mysterria spawn audit metadata was unavailable", auditFailure);
         }
     }
 
